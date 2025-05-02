@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from auth.application.services import AuthService
 from auth.infrastructure.repositories import MongoDBUserRepository
 from .schemas import Token
-from ..dependencies import get_auth_service
+from .dependencies import get_auth_service
 
 router = APIRouter(
     prefix="/v1/auth",
