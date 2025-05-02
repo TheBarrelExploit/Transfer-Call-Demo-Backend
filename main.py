@@ -48,6 +48,10 @@ app.add_middleware(
 
 @app.get("/")
 async def read_root():
+    mongo = MongoDB()
+    collection = mongo.get_collection("llamadas")
+    result = await collection.find_one({})
+    print(result)
     return {"message": "Transfer-Call-Demo API is running"}
 
 
