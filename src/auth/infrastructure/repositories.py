@@ -4,6 +4,8 @@ from src.shared.database.mongodb import db
 from typing import Optional
 
 class MongoDBUserRepository(UserRepository):
+    """Implementación concreta para MongoDB del repositorio de usuarios"""
+    
     def __init__(self):
         self.users_collection = db["users"]
 
@@ -12,3 +14,7 @@ class MongoDBUserRepository(UserRepository):
         if user_data:
             return User(**user_data)
         return None
+
+    async def create_user(self, user: User) -> User:
+        await self.users_collection.insert_one(user.dict())
+        return user

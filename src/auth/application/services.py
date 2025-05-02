@@ -1,10 +1,11 @@
 from src.auth.domain.entities import User
 from src.auth.infrastructure.security import verify_password, create_access_token
-from src.auth.infrastructure.repositories import MongoDBUserRepository
+from src.auth.interfaces.repositories import UserRepository  # Import de la interfaz
 from datetime import timedelta
+from src.shared.config import get_settings
 
 class AuthService:
-    def __init__(self, user_repository: MongoDBUserRepository):
+    def __init__(self, user_repository: UserRepository):  # Usa la interfaz como tipo
         self.user_repository = user_repository
 
     async def authenticate_user(self, username: str, password: str) -> User | None:
