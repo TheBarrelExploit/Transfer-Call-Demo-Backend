@@ -1,3 +1,4 @@
+import subprocess
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.shared.config import get_settings
@@ -42,3 +43,8 @@ async def startup_db_client():
         "email": "admin@example.com",
         "disabled": False
     }) """
+if __name__ == "__main__":
+    try:
+        subprocess.run(["fastapi","dev","main.py","--port", str(settings.PORT), "--reload"])
+    except KeyboardInterrupt:
+        print("Server stopped.")
