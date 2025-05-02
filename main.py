@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from shared.config import get_settings
+from src.shared.config import get_settings
 #from auth.interfaces.web.v1.routers import auth_router_v1
-from auth.infrastructure.security import get_password_hash
+from src.auth.infrastructure.security import get_password_hash
 
 
 #get settings from environment variables
@@ -31,7 +31,7 @@ def read_root():
     return {"message": "Transfer-Call-Demo API is running"}
 
 
-
+""" 
 @app.on_event("startup")
 async def startup_db_client():
     # Código temporal para crear usuario de prueba
@@ -41,4 +41,4 @@ async def startup_db_client():
         "hashed_password": get_password_hash("secret"),
         "email": "admin@example.com",
         "disabled": False
-    })
+    }) """
