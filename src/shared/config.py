@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "FastAPI Transfer Call"
     PORT: int = 8000
     DEBUG: bool = True
-    ALLOWED_HOSTS: list[str] 
+    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
 
     # Database settings
     MONGO_URI: str 
@@ -16,9 +16,10 @@ class Settings(BaseSettings):
     # jwt settings
     JWT_SECRET: str
     JWT_ALGORITHM: str
-    
+    JWT_EXPIRATION: int  # in minutes
+ 
     """Settings .env file"""
-    model_config =  SettingsConfigDict(env_file=".env",case_sensitive=True)
+    model_config =  SettingsConfigDict(env_file=".env_default",case_sensitive=True)
 
 @lru_cache        
 def get_settings() -> Settings:
