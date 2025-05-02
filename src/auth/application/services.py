@@ -1,6 +1,6 @@
-from auth.domain.entities import User
-from auth.infrastructure.security import verify_password, create_access_token
-from auth.infrastructure.repositories import MongoDBUserRepository
+from src.auth.domain.entities import User
+from src.auth.infrastructure.security import verify_password, create_access_token
+from src.auth.infrastructure.repositories import MongoDBUserRepository
 from datetime import timedelta
 
 class AuthService:

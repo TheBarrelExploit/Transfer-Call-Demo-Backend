@@ -1,6 +1,6 @@
-from auth.domain.entities import User
-from auth.interfaces.repositories import UserRepository
-from shared.database.mongodb import db
+from src.auth.domain.entities import User
+from src.auth.interfaces.repositories import UserRepository
+from src.shared.database.mongodb import db
 from typing import Optional
 
 class MongoDBUserRepository(UserRepository):
