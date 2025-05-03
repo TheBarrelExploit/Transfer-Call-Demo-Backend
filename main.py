@@ -47,14 +47,19 @@ app = FastAPI(
 
 
 # CORS middleware
+# Configura CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=[
+        "http://127.0.0.1:5500",  # El origen de frontend
+        "http://localhost:5500",   # Alternativa común
+        "http://127.0.0.1:8001",   # Para Swagger UI
+        "http://localhost:8001"     # Para Swagger UI alternativo
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Incluir routers
 app.include_router(auth_router_v1, prefix="/api")
 
