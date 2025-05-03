@@ -12,7 +12,7 @@ lxml==5.3.2
 markdown-it-py==3.0.0
 mdurl==0.1.2
 
-motor==3.3.1
+motor==3.7.0
 numpy==2.2.5
 pandas==2.2.3
 passlib==1.7.4
@@ -22,7 +22,7 @@ pydantic-settings==2.9.1
 pydantic_core==2.33.2
 Pygments==2.19.1
 
-pymongo==4.5.0
+pymongo==4.12.1
 
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.0

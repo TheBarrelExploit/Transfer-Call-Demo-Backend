@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     """settings for the application"""
     # General settings
     APP_NAME: str = "FastAPI Transfer Call"
+    API_V1_STR: str = "/api/v1"
     PORT: int = 8000
     DEBUG: bool = True
     ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
