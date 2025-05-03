@@ -1,3 +1,4 @@
+import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
@@ -8,10 +9,24 @@ settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        if not isinstance(hashed_password, str):
+            return False
+        if not hashed_password.startswith("$2b$"):
+            return False
+
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception as e:
+        print(f"Error verifying password: {e}")
+        return False
+
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Genera un hash bcrypt válido para la contraseña"""
+    return bcrypt.hashpw(
+        password.encode('utf-8'),
+        bcrypt.gensalt()
+    ).decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()

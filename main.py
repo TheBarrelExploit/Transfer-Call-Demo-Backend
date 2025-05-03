@@ -20,6 +20,19 @@ async def lifespan(app:FastAPI):
     mongo = MongoDB()
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
     
+    # Crear usuario de prueba si no existe
+    users_col = mongo.get_collection("users")
+    if await users_col.count_documents({"username": "testuser"}) == 0:
+        from src.auth.domain.entities import User
+        test_user = User(
+        username="testuser",
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword"),  # Esto generará un nuevo hash válido
+        disabled=False,
+        full_name="Usuario de Prueba"
+    )
+        await users_col.insert_one(test_user.dict())
+
     yield
     
     # Close MongoDB connection
@@ -43,7 +56,7 @@ app.add_middleware(
 )
 
 # Incluir routers
-app.include_router(auth_router_v1, prefix="/api/v1")
+app.include_router(auth_router_v1, prefix="/api")
 
 
 @app.get("/")
