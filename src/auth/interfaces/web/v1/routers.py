@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.auth.application.services import AuthService
-from src.auth.infrastructure.repositories import MongoDBUserRepository
 from .schemas import Token
 from .dependencies import get_auth_service
+
 
 router = APIRouter(
     prefix="/v1/auth",
