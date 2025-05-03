@@ -4,9 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.shared.config import get_settings
 from src.shared.database.mongodb import MongoDB
 from contextlib import asynccontextmanager
-#from auth.interfaces.web.v1.routers import auth_router_v1
+from src.auth.interfaces.web.v1.routers import router as auth_router_v1
 from src.auth.infrastructure.security import get_password_hash
-
 
 #get settings from environment variables
 settings = get_settings()
@@ -44,7 +43,8 @@ app.add_middleware(
 )
 
 # Incluir routers
-#app.include_router(auth_router_v1, prefix="/api")
+app.include_router(auth_router_v1, prefix="/api/v1")
+
 
 @app.get("/")
 async def read_root():
