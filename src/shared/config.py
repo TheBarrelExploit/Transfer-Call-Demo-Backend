@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PORT: int = 8000
     DEBUG: bool = True
-    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", 
+                                "http://127.0.0.1:8001/api/v1/auth/mfa/enable?username=testuser",
+                                "http://127.0.0.1:5500/Transfer-Call-Demo/Transfer-Call-Demo-FrontEnd/html/mfa_setup.html"]
 
     # Database settings
     MONGO_URI: str 
