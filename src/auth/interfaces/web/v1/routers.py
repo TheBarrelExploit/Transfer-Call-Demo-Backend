@@ -10,26 +10,27 @@ router = APIRouter(
     prefix="/v1/auth",
     tags=["auth"]
 )
-
-@router.post("/mfa/enable")
+@router.get("/mfa/enable")
 async def enable_mfa(
     username: str,
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    print(f"Solicitud MFA recibida para: {username}")
+    """Endpoint que siempre genera un nuevo QR/secreto"""
     try:
-        return await auth_service.enable_mfa(username)
+        # Generar nuevo secreto cada vez
+        secret = MFAService.generate_secret()
+        uri = MFAService.get_totp_uri(username, secret)
+        qr_code = MFAService.generate_qr_code(uri)
+        
+        return {
+            "secret": secret,
+            "qr_code": qr_code,
+            "uri": uri
+        }
     except Exception as e:
-        print(f"Error en enable_mfa: {str(e)}")
-        raise
+        logger.error(f"Error generating MFA: {str(e)}")
+        raise HTTPException(status_code=400, detail="Error generating MFA setup")
 
-    
-    """Endpoint para iniciar la configuración de MFA"""
-    try:
-        mfa_data = await auth_service.enable_mfa(username)
-        return JSONResponse(content=mfa_data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/mfa/verify")
 async def verify_mfa(

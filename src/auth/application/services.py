@@ -23,30 +23,25 @@ class AuthService:
         return user
     
     async def enable_mfa(self, username: str) -> dict:
-        print(f"Intentando habilitar MFA para: {username}")
-        user = await self.user_repository.get_user_by_username(username)
-        if not user:
-            print("Usuario no encontrado")
-            raise ValueError("Usuario no encontrado")
-        
-        secret = MFAService.generate_secret()
-        print(f"Secreto generado: {secret}")
-        
-        """Habilita MFA para un usuario y devuelve los datos para configurar la app autenticadora"""
-        user = await self.user_repository.get_user_by_username(username)
-        if not user:
-            raise ValueError("Usuario no encontrado")
-        
-        secret = MFAService.generate_secret()
-        uri = MFAService.get_totp_uri(user.username, secret)
-        qr_code = MFAService.generate_qr_code(uri)
-        
-        # Actualiza el usuario (pero no guardes aún el secreto hasta que se verifique)
-        return {
-            "secret": secret,
-            "qr_code": qr_code,
-            "uri": uri
-        }
+        print(f"Iniciando generación MFA para {username}")
+        try:
+            secret = MFAService.generate_secret()
+            print(f"Secreto generado: {secret}")
+            
+            uri = MFAService.get_totp_uri(username, secret)
+            print(f"URI generada: {uri}")
+            
+            qr_code = MFAService.generate_qr_code(uri)
+            print("QR generado correctamente")
+            
+            return {
+                "secret": secret,
+                "qr_code": qr_code,
+                "uri": uri
+            }
+        except Exception as e:
+            print(f"Error en enable_mfa: {str(e)}")
+            raise
     
     async def verify_mfa(self, username: str, secret: str, code: str) -> bool:
         """Verifica un código MFA y activa MFA para el usuario si es correcto"""
