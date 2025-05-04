@@ -1,4 +1,4 @@
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status, Request
 from src.shared.database.mongodb import MongoDB
 from src.auth.infrastructure.repositories import MongoDBUserRepository
 from src.auth.application.services import AuthService
