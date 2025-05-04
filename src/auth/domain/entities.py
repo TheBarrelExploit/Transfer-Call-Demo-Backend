@@ -7,7 +7,7 @@ class User(BaseModel):
     hashed_password: str
     disabled: Optional[bool] = False
     full_name: Optional[str] = None
-    mfa_enabled: bool = False  # Nuevo campo para controlar MFA
+    mfa_enabled: bool = True  # Cambiado a True por defecto
     mfa_secret: Optional[str] = None  # Almacena el secreto para generar TOTP
     
     class Config:

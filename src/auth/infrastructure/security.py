@@ -2,6 +2,8 @@ import bcrypt
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from src.shared.config import get_settings
+import time
+import pyotp
 
 settings = get_settings()
 
@@ -33,3 +35,11 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
         settings.JWT_SECRET,
         algorithm=settings.JWT_ALGORITHM
     )
+
+    
+def verify_code(secret: str, code: str) -> bool:
+    """Verificación robusta con ventana de tiempo ampliada"""
+    totp = pyotp.TOTP(secret)
+    
+    # Verifica el código actual y los 2 códigos anteriores/siguientes (ventana de 2)
+    return totp.verify(code, valid_window=2)

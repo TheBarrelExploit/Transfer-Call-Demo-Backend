@@ -2,6 +2,10 @@ import pyotp
 import qrcode
 from io import BytesIO
 import base64
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MFAService:
     @staticmethod
@@ -26,7 +30,20 @@ class MFAService:
         return f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode()}"
     
     @staticmethod
-    def verify_code(secret: str, code: str) -> bool:
-        """Verifica si el código proporcionado es válido"""
-        totp = pyotp.TOTP(secret)
-        return totp.verify(code, valid_window=1)  # Permite 1 código anterior/siguiente
+    def verify_code(secret: str, code: str, window: int = 1) -> bool:
+        """Verificación mejorada con logs detallados"""
+        try:
+            totp = pyotp.TOTP(secret)
+            current_time = int(time.time())
+            time_remaining = 30 - (current_time % 30)
+            
+            logger.info(f"Verificando código - Secreto: {secret}")
+            logger.info(f"Código recibido: {code} | Esperado: {totp.now()}")
+            logger.info(f"Tiempo restante: {time_remaining}s")
+            
+            # Verificación con ventana de tiempo
+            return totp.verify(code, valid_window=window)
+            
+        except Exception as e:
+            logger.error(f"Error en verify_code: {str(e)}")
+            return False

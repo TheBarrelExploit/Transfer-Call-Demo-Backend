@@ -51,14 +51,16 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500",  # El origen de frontend
-        "http://localhost:5500",   # Alternativa común
-        "http://127.0.0.1:8001",   # Para Swagger UI
-        "http://localhost:8001"     # Para Swagger UI alternativo
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "http://127.0.0.1:8001",
+        "http://localhost:8001"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    allow_origin_regex=r"http://(127\.0\.0\.1|localhost)(:\d+)?",  # Regex para localhost con cualquier puerto
 )
 # Incluir routers
 app.include_router(auth_router_v1, prefix="/api")
@@ -72,6 +74,50 @@ async def read_root():
     print(result)
     return {"message": "Transfer-Call-Demo API is running"}
 
+from fastapi import Request
+import logging
+
+logger = logging.getLogger(__name__)
+
+@app.middleware("http")
+async def debug_cors_middleware(request: Request, call_next):
+    # Loggear información de la solicitud entrante
+    logger.info(f"\n{'='*50}\nCORS DEBUG - Request Incoming\n"
+                f"Origin: {request.headers.get('origin')}\n"
+                f"Method: {request.method}\n"
+                f"Path: {request.url.path}\n"
+                f"Headers: {request.headers}\n"
+                f"{'='*50}")
+    
+    response = await call_next(request)
+    
+    # Añadir headers CORS manualmente si es necesario
+    origin = request.headers.get('origin')
+    if origin in [
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "http://127.0.0.1:8001",
+        "http://localhost:8001"
+    ]:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    
+    # Loggear información de la respuesta
+    logger.info(f"\n{'='*50}\nCORS DEBUG - Response Outgoing\n"
+                f"Status: {response.status_code}\n"
+                f"Headers: {response.headers}\n"
+                f"{'='*50}")
+    
+    return response
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('app.log')
+    ]
+)
 
 if __name__ == "__main__":
     try:

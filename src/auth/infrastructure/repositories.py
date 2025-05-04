@@ -19,3 +19,10 @@ class MongoDBUserRepository(UserRepository):
     async def create_user(self, user: User) -> User:
         await self.users_collection.insert_one(user.dict())
         return user
+
+    async def update_user(self, user: User) -> bool:
+        result = await self.users_collection.update_one(
+            {"username": user.username},
+            {"$set": user.dict()}
+        )
+        return result.modified_count > 0

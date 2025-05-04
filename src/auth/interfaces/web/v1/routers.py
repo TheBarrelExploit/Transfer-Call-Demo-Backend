@@ -1,15 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from src.auth.application.services import AuthService
 from .schemas import Token
 from .dependencies import get_auth_service
 from fastapi.responses import JSONResponse
 from src.auth.infrastructure.mfa import MFAService
+import pyotp
+import time
+from pydantic import BaseModel
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/v1/auth",
     tags=["auth"]
 )
+
+
+class MFAVerifyRequest(BaseModel):
+    username: str
+    code: str
+    secret: str
+
 @router.get("/mfa/enable")
 async def enable_mfa(
     username: str,
@@ -31,29 +45,59 @@ async def enable_mfa(
         logger.error(f"Error generating MFA: {str(e)}")
         raise HTTPException(status_code=400, detail="Error generating MFA setup")
 
-
 @router.post("/mfa/verify")
 async def verify_mfa(
-    username: str,
-    code: str,
-    secret: str,
+    request: Request,
+    mfa_request: MFAVerifyRequest,
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    """Endpoint para verificar y activar MFA"""
-    success = await auth_service.verify_mfa(username, secret, code)
-    if not success:
+    """Endpoint de verificación usando MFAService"""
+    try:
+        logger.info(f"\n{'='*50}\nMFA Verification Request\n"
+                   f"Headers: {request.headers}\n"
+                   f"Body: {mfa_request}\n"
+                   f"{'='*50}")
+        
+        logger.info(f"Verificando MFA para {mfa_request.username}")
+        
+        # Verificar el código
+        if not MFAService.verify_code(mfa_request.secret, mfa_request.code):
+            logger.warning(f"Código MFA inválido para {mfa_request.username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Código MFA inválido"
+            )
+        
+        # Actualizar usuario
+        user = await auth_service.user_repository.get_user_by_username(mfa_request.username)
+        if not user:
+            logger.error(f"Usuario no encontrado: {mfa_request.username}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado"
+            )
+            
+        user.mfa_enabled = True
+        user.mfa_secret = mfa_request.secret
+        await auth_service.user_repository.update_user(user)
+        
+        logger.info(f"MFA activado correctamente para {mfa_request.username}")
+        return {"verified": True, "message": "MFA configurado correctamente"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en verificación MFA: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Código MFA inválido"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error en el servidor"
         )
-    return {"message": "MFA habilitado correctamente"}
-
+        
 @router.post("/token")
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    """Endpoint de login modificado para soportar MFA"""
     user = await auth_service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -62,14 +106,14 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if user.mfa_enabled:
-        return {
+    # SIEMPRE requerir MFA
+    return JSONResponse(
+        status_code=status.HTTP_202_ACCEPTED,
+        content={
             "mfa_required": True,
             "username": user.username
         }
-    
-    access_token = await auth_service.create_access_token(user.username)
-    return {"access_token": access_token, "token_type": "bearer"}
+    )
 
 @router.post("/token/mfa")
 async def login_with_mfa(
@@ -77,9 +121,9 @@ async def login_with_mfa(
     code: str,
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    """Endpoint para completar login con MFA"""
+    """Genera token JWT después de verificación MFA exitosa"""
     user = await auth_service.user_repository.get_user_by_username(username)
-    if not user or not user.mfa_enabled or not user.mfa_secret:
+    if not user or not user.mfa_secret:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Autenticación MFA requerida"
@@ -93,3 +137,25 @@ async def login_with_mfa(
     
     access_token = await auth_service.create_access_token(user.username)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/mfa/debug-secret")
+async def debug_secret(secret: str):
+    """Endpoint para debug del secreto MFA"""
+    try:
+        totp = pyotp.TOTP(secret)
+        current_time = int(time.time())
+        time_remaining = 30 - (current_time % 30)
+        
+        return {
+            "current_code": totp.now(),
+            "time_remaining": time_remaining,
+            "secret_valid": len(secret) == 32,  # Los secretos TOTP suelen tener 32 caracteres
+            "timestamp": current_time
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
