@@ -1,6 +1,7 @@
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pymongo.errors import ConnectionFailure
+from typing import Optional
 
 
 logger = logging.getLogger(__name__)
@@ -9,9 +10,9 @@ class MongoDB:
     """
         mongoDB connection manager
     """
-    _instance = None
-    _client = None
-    _db = None
+    _instance:Optional['MongoDB'] = None
+    _client: Optional[AsyncIOMotorClient] = None
+    _db:Optional[AsyncIOMotorDatabase] =None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -39,12 +40,21 @@ class MongoDB:
         else:
             logger.warning("MongoDB already connected")
         
-    def get_database(self):
-            if self._db is None:
-                raise ConnectionError("MongoDB not connected")
-            return self._db
+    def get_database(self)-> AsyncIOMotorDatabase:
+        """get database from mongoDB
+
+        Raises:
+            ConnectionError: Connection not successful to mongoDB
+
+        Returns:
+            AsyncIOMotorDatabase: database mongoDB
+        """
+            
+        if self._db is None:
+            raise ConnectionError("MongoDB not connected")
+        return self._db
     
-    def get_collection(self, collection_name: str):
+    def get_collection(self, collection_name: str)->AsyncIOMotorCollection:
         """
             get collection from mongoDB
         """
