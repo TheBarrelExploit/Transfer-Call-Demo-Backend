@@ -5,10 +5,9 @@ class User(BaseModel):
     username: str
     email: EmailStr
     hashed_password: str
-    disabled: Optional[bool] = False
-    full_name: Optional[str] = None
-    mfa_enabled: bool = True  # Cambiado a True por defecto
-    mfa_secret: Optional[str] = None  # Almacena el secreto para generar TOTP
+    disabled: bool = False
+    mfa_enabled: bool = False
+    mfa_secret: Optional[str] = None
     
     class Config:
         from_attributes = True
