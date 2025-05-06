@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.shared.config import get_settings
 from src.shared.database.mongodb import MongoDB
 from contextlib import asynccontextmanager
+from src.users.interfaces.web.v1.routers import router as users_router_v1
 from src.auth.interfaces.web.v1.routers import router as auth_router_v1
 from src.auth.infrastructure.security import get_password_hash
 
@@ -18,6 +19,7 @@ async def lifespan(app:FastAPI):
     """
     # Connect to MongoDB
     mongo = MongoDB()
+    app.state.mongo = mongo
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
     
     # Crear usuario de prueba si no existe
@@ -45,17 +47,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+print(settings.ALLOWED_HOSTS)
 
 # CORS middleware
 # Configura CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:8001",
-        "http://localhost:8001"
-    ],
+    allow_origins=settings.ALLOWED_HOSTS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,6 +62,7 @@ app.add_middleware(
 )
 # Incluir routers
 app.include_router(auth_router_v1, prefix="/api")
+app.include_router(users_router_v1, prefix="/api")
 
 
 @app.get("/")

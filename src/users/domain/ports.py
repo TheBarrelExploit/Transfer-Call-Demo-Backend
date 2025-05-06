@@ -16,6 +16,11 @@ class UserRepository(ABC):
         """Create a new user"""
         pass
     @abstractmethod
+    async def create_sso(self, user:UserBase)-> UserBase:
+        """Create a new user from microsoft 365"""
+        pass
+
+    @abstractmethod
     async def update(self, id:str, data:dict) -> Optional[UserBase]:
         """update a user"""
         pass

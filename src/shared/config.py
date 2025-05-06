@@ -8,14 +8,18 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PORT: int = 8000
     DEBUG: bool = True
-    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", 
-                                "http://127.0.0.1:8001/api/v1/auth/mfa/enable?username=testuser",
-                                "http://127.0.0.1:5500/Transfer-Call-Demo/Transfer-Call-Demo-FrontEnd/html/mfa_setup.html"]
+    ALLOWED_HOSTS: list[str] = ["localhost:8000", "127.0.0.1:8000"]
 
     # Database settings
     MONGO_URI: str 
     MONGO_DB: str 
-    
+
+    #Microsoft login
+    MICROSOFT_CLIENT_ID: str
+    MICROSOFT_CLIENT_SECRET:str
+    MICROSOFT_TENANT_ID:str
+    MICROSOFT_REDIRECT_URI:str
+
     # jwt settings
     JWT_SECRET: str
     JWT_ALGORITHM: str
