@@ -8,6 +8,7 @@ class User(BaseModel):
     disabled: bool = False
     mfa_enabled: bool = False
     mfa_secret: Optional[str] = None
+    mfa_configured: bool = False  # Nuevo campo para marcar configuración completa
     
     class Config:
         from_attributes = True

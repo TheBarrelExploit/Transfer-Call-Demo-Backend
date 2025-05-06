@@ -23,6 +23,9 @@ class MongoDBUserRepository(UserRepository):
     async def update_user(self, user: User) -> bool:
         result = await self.users_collection.update_one(
             {"username": user.username},
-            {"$set": user.dict()}
+            {"$set": {
+                **user.dict(),
+                "mfa_configured": True  # Asegurar que se marque como configurado
+            }}
         )
         return result.modified_count > 0

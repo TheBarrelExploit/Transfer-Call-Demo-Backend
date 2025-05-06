@@ -21,3 +21,5 @@ class AuthService:
             data={"sub": username, "mfa_verified": True},  # Añadido claim mfa_verified
             expires_delta=access_token_expires
         )
+    
+    
