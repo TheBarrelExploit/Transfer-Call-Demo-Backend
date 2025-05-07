@@ -1,9 +1,11 @@
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from jose import jwt, JWTError
+from dataclasses import asdict
 from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.infrastructure.microsoft_sso import MicrosoftSSORepository
 from src.users.application.services import UserService
+from src.users.interfaces.web.v1.schemas import UserResponse 
 from src.users.domain.models import UserBase
 from src.shared.config import get_settings
 import logging
@@ -37,10 +39,12 @@ class MicrosoftAuthService(AuthServiceSSO):
 
         token = await self.create_access_token(user)
 
+        user_response = asdict(user)
+
         return {
             "token": token.get("access_token"),
             "token_type" : token.get("token_type"),
-            "user": user
+            "user": UserResponse(**user_response)
         }
 
     async def create_user_sso(self, user_info) -> UserBase:
@@ -63,7 +67,8 @@ class MicrosoftAuthService(AuthServiceSSO):
                 password_hash= None
             )
             user = await self.user_repository.create_user_sso(new_user)
-            return user
+    
+        user._id= user.id
         return user
      
     async def create_access_token(self, user:UserBase):

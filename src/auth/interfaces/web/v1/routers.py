@@ -10,6 +10,7 @@ import time
 from pydantic import BaseModel
 from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
+from src.users.interfaces.web.v1.schemas import UserDataSSO
 # Añade al inicio de routers.py
 from datetime import datetime
 from typing import Optional
@@ -447,7 +448,8 @@ async def auth_callback(
 ):
     try:
         auth_result = await auth_service.process_auth_code(code)
-        return auth_result
+
+        return UserDataSSO.model_validate(auth_result)
     
     except Exception as e:
         raise HTTPException(

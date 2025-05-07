@@ -14,7 +14,7 @@ class PyObjectId(ObjectId):
         if not ObjectId.is_valid(v):
             raise ValueError("Invalid ObjectId")
         return ObjectId(v)
-
+    
 class MFAConfigSchema(BaseModel):
     secret: Optional[str] = None
     enabled: bool = False
@@ -46,7 +46,18 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     entity:str
+    microsoft_id_account:str
     roles:List[str]
     mfa: MFAConfigSchema
     created_at: datetime 
     updated_at: Optional[datetime] = None
+
+
+
+class UserDataSSO(BaseModel):
+    """
+    UserSSO Output schema.
+    """
+    token:str
+    token_type:str
+    user: UserResponse
