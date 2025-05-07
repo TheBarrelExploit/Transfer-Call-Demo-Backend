@@ -431,3 +431,26 @@ async def verify_mfa_only(
         raise HTTPException(status_code=401, detail="Código inválido")
     
     return {"verified": True}
+
+@router.get("/login/microsoft")
+async def login(
+    auth_service:AuthServiceSSO = Depends(get_auth_service_sso) 
+):
+    login_url = await auth_service.get_login_url()
+    return RedirectResponse(url = login_url)
+
+
+@router.get("/microsoft/callback")
+async def auth_callback(
+    code:str,
+    auth_service:AuthServiceSSO = Depends(get_auth_service_sso)
+):
+    try:
+        auth_result = await auth_service.process_auth_code(code)
+        return auth_result
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail = f"Error durante la autenticación: {str(e)}"
+        )
