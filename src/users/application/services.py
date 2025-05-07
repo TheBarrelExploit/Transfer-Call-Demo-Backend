@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from passlib.context import CryptContext
 from datetime import datetime, timezone
 
-from .interfaces import UserService
+from .interfaces import UserServiceUser
 from .exception import UserNotFoundException, InvalidPasswordException, EmailAlreadyExistsException, InvalidDataException
 from ..domain.models import UserBase, MFAConfig
 from ..domain.ports import UserRepository
@@ -10,7 +10,7 @@ from ..interfaces.web.v1.schemas import UserCreateRequest
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class UserService(UserService):
+class UserService(UserServiceUser):
     def __init__(self, repository: UserRepository):
          self.repository = repository
     
@@ -31,6 +31,19 @@ class UserService(UserService):
         if not user:
              raise UserNotFoundException(f"User with email {email} not found")
         return user
+    
+    async def get_by_microsoft_id(self, id) -> Optional[UserBase]:
+        user = await self.repository.find_by_id_microsoft(id)
+        if not user:
+            return None
+        return user
+    
+    async def create_user_sso(self, user:UserBase) -> UserBase:
+        existing_user = await self.repository.find_by_id_microsoft(user.microsoft_id_account)
+        if existing_user:
+            return existing_user
+        
+        return await self.repository.create(user)
     
     async def create_user(self, user: UserCreateRequest)-> UserBase:
         existing_user = await self.repository.find_by_email(user.email)

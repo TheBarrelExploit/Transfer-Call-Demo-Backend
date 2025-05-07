@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 from ..domain.models import UserBase
 
 
-class UserService(ABC):
+class UserServiceUser(ABC):
     @abstractmethod
     async def get_by_id(self, id: str) -> Optional[UserBase]:
         pass
@@ -13,7 +13,15 @@ class UserService(ABC):
         pass
 
     @abstractmethod
+    async def get_by_microsoft_id(self, id: str) -> Optional[UserBase]:
+        pass
+
+    @abstractmethod
     async def create_user(self, user: UserBase) -> UserBase:
+        pass
+
+    @abstractmethod
+    async def create_user_sso(self, user:UserBase) -> UserBase:
         pass
 
     @abstractmethod

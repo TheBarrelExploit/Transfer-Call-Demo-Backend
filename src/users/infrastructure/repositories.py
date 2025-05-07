@@ -15,13 +15,17 @@ class DBUserRepository(UserRepository):
         user_data = await self.collection.find_one({"_id": ObjectId(id)})
         return UserBase.from_mongo(user_data) if user_data else None
     
+    async def find_by_id_microsoft(self, id:str):
+        user_data = await self.collection.find_one({"microsoft_id_account": id})
+        return UserBase.from_mongo(user_data) if user_data else None
+        
     async def find_by_email(self, email:str) -> UserBase | None:
         user_data = await self.collection.find_one({"email": email})
         return UserBase.from_mongo(user_data) if user_data else None
     
     async def create(self, user:UserBase) -> UserBase | None:
         data = asdict(user)
-        data.pop("id", None)
+        data.pop("_id", None)
         result = await self.collection.insert_one(data)
         user._id = str(result.inserted_id)
         return user

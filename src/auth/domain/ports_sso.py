@@ -13,6 +13,6 @@ class AuthLoginSSO(ABC):
         pass
 
     @abstractmethod
-    async def get_user_inf(accss_token:str) -> Dict[str, Any]:
+    async def get_user_info(accss_token:str) -> Dict[str, Any]:
         pass
 

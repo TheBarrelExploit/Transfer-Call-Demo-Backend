@@ -16,11 +16,12 @@ class UserBase:
     username: str
     password_hash: str
     entity: str
-    roles:List[str]
+    roles: List[str] = field(default_factory=lambda: ["user"])
+    microsoft_id_account: Optional[str] = None
     mfa: MFAConfig = field(default_factory=MFAConfig)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-
+    
     
     # Campo interno para MongoDB (no incluido en __init__)
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)

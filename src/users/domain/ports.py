@@ -7,6 +7,11 @@ class UserRepository(ABC):
     async def find_by_id(self, id: str) -> Optional[UserBase]:
         """Find a user by their ID."""
         pass
+
+    @abstractmethod
+    async def find_by_id_microsoft(self, id:str) -> Optional[UserBase]:
+        "Find a user by their ID microsoft"
+        pass
     @abstractmethod
     async def find_by_email(self, email: str) -> Optional[UserBase]:
         """Find a user by their email"""
@@ -14,10 +19,6 @@ class UserRepository(ABC):
     @abstractmethod
     async def create(self, user: UserBase) -> UserBase:
         """Create a new user"""
-        pass
-    @abstractmethod
-    async def create_sso(self, user:UserBase)-> UserBase:
-        """Create a new user from microsoft 365"""
         pass
 
     @abstractmethod

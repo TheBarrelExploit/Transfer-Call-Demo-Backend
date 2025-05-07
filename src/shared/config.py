@@ -26,9 +26,9 @@ class Settings(BaseSettings):
     JWT_EXPIRATION: int  # in minutes
  
     """Settings .env file"""
-    model_config =  SettingsConfigDict(env_file=".env_default",case_sensitive=True)
+    model_config =  SettingsConfigDict(env_file=".env", case_sensitive=True)
 
-@lru_cache        
+@lru_cache     
 def get_settings() -> Settings:
     """Get settings from environment variables"""
     return Settings()

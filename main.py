@@ -9,6 +9,7 @@ from src.auth.interfaces.web.v1.routers import router as auth_router_v1
 from src.auth.infrastructure.security import get_password_hash
 
 #get settings from environment variables
+
 settings = get_settings()
 
 @asynccontextmanager
@@ -48,6 +49,7 @@ app = FastAPI(
 )
 
 print(settings.ALLOWED_HOSTS)
+print(settings.MICROSOFT_REDIRECT_URI)
 
 # CORS middleware
 # Configura CORS

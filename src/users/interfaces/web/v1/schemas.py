@@ -31,11 +31,18 @@ class UserCreateRequest(BaseModel):
     entity:str = Field(..., min_length=3, max_length=16)
     roles:List[str] 
 
+class UserChangePassword(BaseModel):
+    """
+    Change Password User
+    """
+    id:str
+    new_password:str
+
 class UserResponse(BaseModel):
     """
     User output schema.
     """
-    _id: str
+    id: str = Field(alias="_id")
     email: EmailStr
     username: str
     entity:str

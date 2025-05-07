@@ -3,11 +3,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from src.auth.application.services import AuthService
 from .schemas import Token
 from .dependencies import get_auth_service
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from src.auth.infrastructure.mfa import MFAService
 import pyotp
 import time
 from pydantic import BaseModel
+from src.auth.application.services_sso import AuthServiceSSO
+from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
+# Añade al inicio de routers.py
 from datetime import datetime
 from typing import Optional
 

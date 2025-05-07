@@ -1,7 +1,7 @@
 import httpx
 import json
 from msal import ConfidentialClientApplication
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from src.auth.domain.ports_sso import AuthLoginSSO
 from src.shared.config import get_settings
 
@@ -14,7 +14,7 @@ class MicrosoftSSORepository(AuthLoginSSO):
         self.client_secret = settings.MICROSOFT_CLIENT_SECRET
         self.tenant_id = settings.MICROSOFT_TENANT_ID
         self.redirect_uri = settings.MICROSOFT_REDIRECT_URI
-        self.authority = f"https://login.microsoftonline.com/{self.tenant_id}"
+        self.authority = f"https://login.microsoftonline.com/common"
         self.scope = ["User.Read"]
 
         self.app = ConfidentialClientApplication(
@@ -40,8 +40,9 @@ class MicrosoftSSORepository(AuthLoginSSO):
             redirect_uri=self.redirect_uri
         )
 
+        error = result.get("error_description")
         if not result:
-            raise Exception(f"Error al obtener el token: {result.get("error_description")}")
+            raise Exception(f"Error al obtener el token: {error}")
         
         return result
     

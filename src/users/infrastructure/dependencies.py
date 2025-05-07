@@ -16,8 +16,7 @@ def get_users_collection(db: Annotated[AsyncIOMotorDatabase, Depends(get_db)]) -
     return db.get_collection("users")
 
 def get_user_repository(
-    collection: Annotated[AsyncIOMotorCollection, Depends(get_users_collection)]
-) -> UserRepository:
+    collection: Annotated[AsyncIOMotorCollection, Depends(get_users_collection)]) -> UserRepository:
     return DBUserRepository(collection)
 
 def get_user_service(
