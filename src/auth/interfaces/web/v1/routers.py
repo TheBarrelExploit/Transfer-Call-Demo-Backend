@@ -13,7 +13,6 @@ import time
 from pydantic import BaseModel
 from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
-from src.users.interfaces.web.v1.schemas import UserDataSSO
 # Añade al inicio de routers.py
 from datetime import datetime
 from typing import Optional
