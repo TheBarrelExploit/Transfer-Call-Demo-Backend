@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from src.auth.infrastructure.security import oauth2_scheme
+from src.auth.infrastructure.security import oauth2_scheme, invalidate_token
 from .dependencies import get_current_user
 from src.auth.domain.entities import User 
 from src.auth.application.services import AuthService
