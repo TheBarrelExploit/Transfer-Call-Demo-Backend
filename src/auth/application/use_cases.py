@@ -76,6 +76,7 @@ class MicrosoftAuthService(AuthServiceSSO):
             "email": user.email,
             "name": user.username,
             "roles": user.roles,
+            "auth_provider":user.auth_provider,
             "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRATION)
         }
 
@@ -87,7 +88,7 @@ class MicrosoftAuthService(AuthServiceSSO):
        
         return {
            "access_token": access_token,
-           "token_type": "bearer"}
+           "token_type": "Bearer"}
     
     async def validate_token(self, token: str) -> Optional[UserBase]:
         try:

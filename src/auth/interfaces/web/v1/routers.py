@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from src.auth.infrastructure.security import oauth2_scheme, invalidate_token
 from .dependencies import get_current_user
 from src.auth.domain.entities import User 
+from dataclasses import asdict
 from src.auth.application.services import AuthService
 from .schemas import Token
 from .dependencies import get_auth_service
@@ -13,6 +14,8 @@ import time
 from pydantic import BaseModel
 from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
+from src.users.domain.models import UserBase
+from src.users.interfaces.web.v1.schemas import UserResponse
 # Añade al inicio de routers.py
 from datetime import datetime
 from typing import Optional
@@ -450,6 +453,7 @@ async def auth_callback(
 ):
     try:
         auth_result = await auth_service.process_auth_code(code)
+        print(auth_result['token'])
         return RedirectResponse(url=f"http://localhost:5500/html/callback.html?token={auth_result['token']}")
     
     except Exception as e:
@@ -457,6 +461,22 @@ async def auth_callback(
             status_code = status.HTTP_400_BAD_REQUEST,
             detail = f"Error durante la autenticación: {str(e)}"
         )
+
+@router.get("/me")
+async def info_users_sso(
+    current_user: UserBase = Depends(get_current_user)
+):
+    try:
+        user = current_user
+        user = asdict(user)
+        print(user)
+        return UserResponse.model_validate(user)
+    except Exception as e:
+        raise HTTPException(
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail= f"error: {str(e)}"
+        )
+
 
 
 @router.post("/logout")

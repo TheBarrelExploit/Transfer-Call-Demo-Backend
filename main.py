@@ -46,7 +46,29 @@ app = FastAPI(
     description="FastAPI Transfer Call",
     version="0.1.0",
     lifespan=lifespan,
+    swagger_ui_oauth2_redirect_url="/oauth2-redirect",
+    swagger_ui_init_oauth={
+        "usePkceWithAuthorizationCodeGrant": True,
+        "clientId": "your-client-id"
+    }
 )
+
+app.swagger_ui_init_oauth = {
+    "usePkceWithAuthorizationCodeGrant": True,
+}
+
+app.openapi_components = {
+    "securitySchemes": {
+        "Bearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+}
+
+# Aplica el esquema de seguridad globalmente
+app.openapi_security = [{"Bearer": []}]
 
 print(settings.ALLOWED_HOSTS)
 print(settings.MICROSOFT_REDIRECT_URI)

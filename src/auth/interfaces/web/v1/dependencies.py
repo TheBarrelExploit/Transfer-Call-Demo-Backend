@@ -13,7 +13,8 @@ from src.auth.infrastructure.security import (
 )
 from src.auth.application.services import AuthService
 from src.auth.application.use_cases import MicrosoftAuthService
-from src.auth.domain.entities import User  #
+from src.auth.domain.entities import User 
+from src.users.domain.models import UserBase #
 from src.users.infrastructure.repositories import DBUserRepository
 from src.users.domain.ports import UserRepository
 from typing import Annotated
@@ -62,8 +63,8 @@ async def get_auth_service_sso(user_repo: UserService = Depends(get_user_service
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    user_repo: MongoDBUserRepository = Depends(get_user_repository)
-) -> User:
+    user_repo: DBUserRepository = Depends(get_user_repository)
+) -> UserBase:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -81,13 +82,13 @@ async def get_current_user(
         if payload is None:
             raise credentials_exception
             
-        username: str = payload.get("sub")
-        if username is None:
+        sub: str = payload.get("sub")
+        if sub is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
-    user = await user_repo.get_user_by_username(username)
+    user = await user_repo.find_by_id(sub)
     if user is None:
         raise credentials_exception
         

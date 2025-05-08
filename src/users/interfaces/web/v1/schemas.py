@@ -55,6 +55,7 @@ class UserResponse(BaseModel):
     roles:List[str]
     mfa: MFAConfigSchema
     created_at: datetime 
+    logo:Optional[str]
     updated_at: Optional[datetime] = None
     auth_provider:AuthProvider
     complete_profile:bool

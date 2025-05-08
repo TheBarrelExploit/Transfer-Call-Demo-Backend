@@ -11,7 +11,7 @@ class AuthProvider(str, Enum):
 @dataclass
 class MFAConfig:
     secret: Optional[str] = None
-    enable: bool = False
+    enabled: bool = False
     backup_codes: List[str] =  field(default_factory=list)
     last_used_at: Optional[datetime] = None
 
@@ -23,6 +23,7 @@ class UserBase:
     entity: str
     auth_provider:AuthProvider
     complete_profile:bool
+    logo: Optional[str] 
     roles: List[str] = field(default_factory=lambda: ["user"])
     microsoft_id_account: str = None
     mfa: MFAConfig = field(default_factory=MFAConfig)
@@ -42,7 +43,7 @@ class UserBase:
         """Constructor que filtra _id correctamente"""
         filtered_data = {k: v for k, v in data.items() if k != '_id'}
         user = cls(**filtered_data)
-        user._id = data['_id']  # Asigna _id después de crear el objeto
+        user._id = str(data['_id'])  # Asigna _id después de crear el objeto
         return user
 
 
