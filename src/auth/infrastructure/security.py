@@ -4,8 +4,11 @@ from jose import JWTError, jwt
 from src.shared.config import get_settings
 import time
 import pyotp
+from fastapi.security import OAuth2PasswordBearer
 
 settings = get_settings()
+blacklisted_tokens = set()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verificación robusta de contraseña"""
@@ -43,3 +46,26 @@ def verify_code(secret: str, code: str) -> bool:
     
     # Verifica el código actual y los 2 códigos anteriores/siguientes (ventana de 2)
     return totp.verify(code, valid_window=2)
+
+def verify_token(token: str):
+    """Verifica y decodifica un token JWT"""
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+        return payload
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+def invalidate_token(token: str):
+    blacklisted_tokens.add(token)
+
+def is_token_blacklisted(token: str) -> bool:
+    return token in blacklisted_tokens

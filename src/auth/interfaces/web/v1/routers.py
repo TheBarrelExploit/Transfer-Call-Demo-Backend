@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from src.auth.infrastructure.security import oauth2_scheme
+from .dependencies import get_current_user
+from src.auth.domain.entities import User 
 from src.auth.application.services import AuthService
 from .schemas import Token
 from .dependencies import get_auth_service
@@ -456,3 +459,17 @@ async def auth_callback(
             status_code = status.HTTP_400_BAD_REQUEST,
             detail = f"Error durante la autenticación: {str(e)}"
         )
+
+
+@router.post("/logout")
+async def logout(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user)
+):
+    invalidate_token(token)
+    return {"message": "Sesión cerrada exitosamente"}
+
+
+@router.get("/protected-route")
+async def protected_route(user: User = Depends(get_current_user)):
+    return {"message": f"Hola {user.username}, estas autenticado!"}

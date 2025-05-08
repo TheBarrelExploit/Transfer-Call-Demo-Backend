@@ -1,15 +1,26 @@
 from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordBearer
 from src.shared.database.mongodb import MongoDB
+from src.shared.config import get_settings
+from src.users.application.services import UserService
 from src.auth.infrastructure.repositories import MongoDBUserRepository
 from src.auth.infrastructure.microsoft_sso import MicrosoftSSORepository
+from src.auth.infrastructure.security import (
+    verify_password,
+    create_access_token,
+    verify_token,
+    is_token_blacklisted
+)
 from src.auth.application.services import AuthService
 from src.auth.application.use_cases import MicrosoftAuthService
-from src.users.application.services import UserService
-from motor.motor_asyncio import  AsyncIOMotorCollection, AsyncIOMotorDatabase
+from src.auth.domain.entities import User  #
 from src.users.infrastructure.repositories import DBUserRepository
-from typing import Annotated
 from src.users.domain.ports import UserRepository
-from src.shared.config import get_settings
+from typing import Annotated
+from motor.motor_asyncio import  AsyncIOMotorCollection, AsyncIOMotorDatabase
+from jose import JWTError
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
 async def get_mongo() -> MongoDB:
     settings = get_settings()
@@ -47,3 +58,37 @@ async def get_auth_microsoft_repository() -> MicrosoftSSORepository:
 
 async def get_auth_service_sso(user_repo: UserService = Depends(get_user_service), sso_auth: MicrosoftSSORepository= Depends(get_auth_microsoft_repository) ) -> MicrosoftAuthService:
     return MicrosoftAuthService(user_repo, sso_auth)
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    user_repo: MongoDBUserRepository = Depends(get_user_repository)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        if is_token_blacklisted(token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token invalidado"
+            )
+            
+        payload = verify_token(token)
+        if payload is None:
+            raise credentials_exception
+            
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = await user_repo.get_user_by_username(username)
+    if user is None:
+        raise credentials_exception
+        
+    return user
