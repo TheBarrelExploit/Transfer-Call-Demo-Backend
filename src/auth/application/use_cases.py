@@ -6,7 +6,7 @@ from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.infrastructure.microsoft_sso import MicrosoftSSORepository
 from src.users.application.services import UserService
 from src.users.interfaces.web.v1.schemas import UserResponse 
-from src.users.domain.models import UserBase
+from src.users.domain.models import UserBase, AuthProvider
 from src.shared.config import get_settings
 import logging
 
@@ -61,7 +61,9 @@ class MicrosoftAuthService(AuthServiceSSO):
                 microsoft_id_account = microsoft_id_account,
                 created_at = datetime.now(timezone.utc),
                 entity = "" , 
-                password_hash= None
+                password_hash= None,
+                auth_provider = AuthProvider.MICROSOFT,
+                complete_profile=False
             )
             user = await self.user_repository.create_user_sso(new_user)
     

@@ -19,6 +19,7 @@ async def create_user(
         created_user = await user_service.create_user(user_data)
         user_dict = created_user.__dict__.copy()
         user_dict["mfa"] = created_user.mfa.__dict__
+        print(user_dict)
         return UserResponse.model_validate(user_dict)
     except EmailAlreadyExistsException as e:
         raise HTTPException(

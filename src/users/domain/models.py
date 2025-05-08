@@ -1,7 +1,12 @@
 from dataclasses import dataclass, field
 from bson import ObjectId
+from enum import Enum
 from typing import List, Optional, Any
 from datetime import datetime, timezone
+
+class AuthProvider(str, Enum):
+    LOCAL = "local"
+    MICROSOFT = "microsoft"
 
 @dataclass
 class MFAConfig:
@@ -16,8 +21,10 @@ class UserBase:
     username: str
     password_hash: str
     entity: str
+    auth_provider:AuthProvider
+    complete_profile:bool
     roles: List[str] = field(default_factory=lambda: ["user"])
-    microsoft_id_account: Optional[str] = None
+    microsoft_id_account: str = None
     mfa: MFAConfig = field(default_factory=MFAConfig)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

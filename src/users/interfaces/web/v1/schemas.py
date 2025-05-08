@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
+from enum import Enum
 from typing import Optional, List
 from bson import ObjectId
 
@@ -14,6 +15,10 @@ class PyObjectId(ObjectId):
         if not ObjectId.is_valid(v):
             raise ValueError("Invalid ObjectId")
         return ObjectId(v)
+    
+class AuthProvider(str, Enum):
+    LOCAL = "local"
+    MICROSOFT = "microsoft"
     
 class MFAConfigSchema(BaseModel):
     secret: Optional[str] = None
@@ -46,10 +51,12 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     entity:str
-    microsoft_id_account:str
+    microsoft_id_account:Optional[str] = None
     roles:List[str]
     mfa: MFAConfigSchema
     created_at: datetime 
     updated_at: Optional[datetime] = None
+    auth_provider:AuthProvider
+    complete_profile:bool
 
 

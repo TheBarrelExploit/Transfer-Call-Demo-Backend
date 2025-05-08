@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from .interfaces import UserServiceUser
 from .exception import UserNotFoundException, InvalidPasswordException, EmailAlreadyExistsException, InvalidDataException
-from ..domain.models import UserBase, MFAConfig
+from ..domain.models import UserBase, MFAConfig, AuthProvider
 from ..domain.ports import UserRepository
 from ..interfaces.web.v1.schemas import UserCreateRequest
 
@@ -57,6 +57,8 @@ class UserService(UserServiceUser):
             entity = user.entity,
             roles= user.roles,
             mfa = MFAConfig(),
+            auth_provider= AuthProvider.LOCAL,
+            complete_profile= True,
             created_at= datetime.now(timezone.utc),
             updated_at = datetime.now(timezone.utc)
         )
