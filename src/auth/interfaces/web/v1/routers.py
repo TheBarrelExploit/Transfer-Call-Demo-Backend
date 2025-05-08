@@ -451,8 +451,7 @@ async def auth_callback(
 ):
     try:
         auth_result = await auth_service.process_auth_code(code)
-
-        return UserDataSSO.model_validate(auth_result)
+        return RedirectResponse(url=f"http://localhost:5500/html/callback.html?token={auth_result['token']}")
     
     except Exception as e:
         raise HTTPException(

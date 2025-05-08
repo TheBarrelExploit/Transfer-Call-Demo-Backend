@@ -39,12 +39,9 @@ class MicrosoftAuthService(AuthServiceSSO):
 
         token = await self.create_access_token(user)
 
-        user_response = asdict(user)
-
         return {
             "token": token.get("access_token"),
             "token_type" : token.get("token_type"),
-            "user": UserResponse(**user_response)
         }
 
     async def create_user_sso(self, user_info) -> UserBase:

@@ -53,11 +53,3 @@ class UserResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
 
-
-class UserDataSSO(BaseModel):
-    """
-    UserSSO Output schema.
-    """
-    token:str
-    token_type:str
-    user: UserResponse
