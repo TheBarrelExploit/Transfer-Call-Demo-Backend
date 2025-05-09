@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PORT: int = 8000
     DEBUG: bool = True
-    ALLOWED_HOSTS: list[str] = ["localhost:8000", "127.0.0.1:8000"]
+    ALLOWED_HOSTS: list[str] = ["localhost:8000", "127.0.0.1:8000", "http://127.0.0.1:8001", "http://127.0.0.1:5500"]
 
     # Database settings
     MONGO_URI: str 
