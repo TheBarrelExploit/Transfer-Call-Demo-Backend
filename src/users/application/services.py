@@ -74,8 +74,7 @@ class UserService(UserServiceUser):
             if existing_user and str(existing_user.id) != id:
                 raise EmailAlreadyExistsException(f"Email {data_user['email']} already exists")
         
-        updated_data = {**{k: v for k, v in data_user.items() if k != "password"},
-                        "updated_at": datetime.now(timezone.utc)
+        updated_data = {**{k: v for k, v in data_user.items() if k != "password"}
         }
 
         if "password" in data_user:

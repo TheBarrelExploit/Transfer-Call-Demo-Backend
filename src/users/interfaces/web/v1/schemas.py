@@ -36,6 +36,15 @@ class UserCreateRequest(BaseModel):
     entity:str = Field(..., min_length=3, max_length=16)
     roles:List[str] 
 
+class UserUpdateRequest(BaseModel):
+    """
+    User Update schema
+    """
+    id: str = None
+    entity: Optional[str] = Field(None, min_length=3, max_length=16) 
+    roles:List[str] = None
+    logo: Optional[str] = None
+
 class UserChangePassword(BaseModel):
     """
     Change Password User
@@ -55,7 +64,7 @@ class UserResponse(BaseModel):
     roles:List[str]
     mfa: MFAConfigSchema
     created_at: datetime 
-    logo:Optional[str]
+    logo:Optional[str] = None
     updated_at: Optional[datetime] = None
     auth_provider:AuthProvider
     complete_profile:bool

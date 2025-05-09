@@ -23,7 +23,7 @@ class UserBase:
     entity: str
     auth_provider:AuthProvider
     complete_profile:bool
-    logo: Optional[str] 
+    logo: Optional[str] = None
     roles: List[str] = field(default_factory=lambda: ["user"])
     microsoft_id_account: str = None
     mfa: MFAConfig = field(default_factory=MFAConfig)

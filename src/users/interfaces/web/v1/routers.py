@@ -1,8 +1,9 @@
+from dataclasses import asdict
 from fastapi import APIRouter, Depends, HTTPException, status
-from .schemas import UserCreateRequest, UserResponse
+from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest
 from src.users.application.services import UserService
 from src.users.infrastructure.dependencies import get_user_service
-from src.users.application.exception import UserNotFoundException, EmailAlreadyExistsException, InvalidPasswordException
+from src.users.application.exception import  EmailAlreadyExistsException
 
 
 router = APIRouter(
@@ -36,4 +37,23 @@ async def change_password(
     
 ):
     print("")
+
+@router.put("/update_user", response_model= UserResponse)
+async def update_user(
+    user_data: UserUpdateRequest,
+    user_service: UserService = Depends(get_user_service)
+):
+    update_payload_dict = user_data.model_dump(
+        exclude_unset=True,
+        exclude={"id"}
+    )
+    if not update_payload_dict:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail= "No fields provided for update in the payload.")
+
+    update_user = await user_service.update_user(user_data.id, update_payload_dict)
+   
+    update_user_dict = asdict(update_user)
+    print(update_user_dict)
+    return UserResponse.model_validate(update_user_dict)
+
     

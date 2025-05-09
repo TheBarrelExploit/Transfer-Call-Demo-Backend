@@ -33,7 +33,7 @@ class DBUserRepository(UserRepository):
     async def update(self, id:str, data:dict) -> Optional[UserBase]:
         await self.collection.update_one(
             {"_id":ObjectId(id)},
-            {"$set": {**data, "updated_at": datetime.now(timezone.utc())}}
+            {"$set": {**data, "updated_at": datetime.now(timezone.utc)}}
         )
         return await self.find_by_id(id)
     
