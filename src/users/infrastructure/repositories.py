@@ -3,9 +3,8 @@ from bson import ObjectId
 from typing import Optional, List
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection
-from ..domain.models import UserBase
+from ..domain.models import UserBase, MFAConfig
 from ..domain.ports import UserRepository
-
 
 class DBUserRepository(UserRepository):
     def __init__(self, collection: AsyncIOMotorCollection):
@@ -26,6 +25,8 @@ class DBUserRepository(UserRepository):
     async def create(self, user:UserBase) -> UserBase | None:
         data = asdict(user)
         data.pop("_id", None)
+        if 'auth_provider' in data and hasattr(data['auth_provider'], 'value'):
+            data['auth_provider'] = data['auth_provider'].value
         result = await self.collection.insert_one(data)
         user._id = str(result.inserted_id)
         return user
@@ -49,3 +50,28 @@ class DBUserRepository(UserRepository):
             usuarios.append(UserBase(documento))
         return usuarios
 
+    async def find_by_username(self, username: str) -> UserBase | None:
+        user_data = await self.collection.find_one({"username": username})
+        if not user_data:
+            return None
+        
+        # Asegurar que mfa existe como diccionario
+        if "mfa" not in user_data:
+            user_data["mfa"] = asdict(MFAConfig())
+        
+        # Convertir a UserBase
+        try:
+            return UserBase.from_mongo(user_data)
+        except Exception as e:
+            logger.error(f"Error convirtiendo usuario desde MongoDB: {str(e)}")
+            raise
+
+    async def update_user_mfa(self, username: str, mfa_config: MFAConfig) -> bool:
+        result = await self.collection.update_one(
+            {"username": username},
+            {"$set": {
+                "mfa": asdict(mfa_config),
+                "updated_at": datetime.now(timezone.utc)  # <-- Quita los paréntesis
+            }}
+        )
+        return result.modified_count > 0

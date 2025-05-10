@@ -1,26 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Form
 from fastapi.security import OAuth2PasswordRequestForm
-from src.auth.infrastructure.security import oauth2_scheme, invalidate_token
-from .dependencies import get_current_user
-from src.auth.domain.entities import User 
-from dataclasses import asdict
-from src.auth.application.services import AuthService
-from .schemas import Token
-from .dependencies import get_auth_service
 from fastapi.responses import JSONResponse, RedirectResponse
+from src.auth.infrastructure.security import oauth2_scheme, invalidate_token
 from src.auth.infrastructure.mfa import MFAService
+from src.auth.application.services_sso import AuthServiceSSO
+from src.auth.application.services import AuthService
+from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
+from src.users.domain.models import UserBase, MFAConfig
+from src.users.interfaces.web.v1.schemas import UserResponse
+from .schemas import Token
+from .dependencies import get_auth_service, get_current_user, get_mfa_service
+from dataclasses import asdict
+from pydantic import BaseModel
+from datetime import datetime, timezone
+from typing import Optional
 import pyotp
 import time
-from pydantic import BaseModel
-from src.auth.application.services_sso import AuthServiceSSO
-from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
-from src.users.domain.models import UserBase
-from src.users.interfaces.web.v1.schemas import UserResponse
-# Añade al inicio de routers.py
-from datetime import datetime
-from typing import Optional
-
 import logging
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
@@ -28,14 +25,26 @@ router = APIRouter(
     tags=["auth"]
 )
 
+class MFAVerifyResponse(BaseModel):
+    verified: bool
+    message: str
+    is_initial_setup: bool
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    username: Optional[str] = None
+
 class MFAVerifyRequest(BaseModel):
     username: str
     code: str
-    secret: Optional[str] = None  # Hacer el secreto opcional
+    secret: Optional[str] = None  # Solo para configuración inicial
 
 class MFATokenRequest(BaseModel):
     username: str
     code: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
 
 class MFASetupResponse(BaseModel):
     """Modelo para respuesta de configuración MFA"""
@@ -47,242 +56,234 @@ class MFASetupResponse(BaseModel):
 
 @router.get("/mfa/status")
 async def get_mfa_status(
-    username: str,
+    username: str = Query(...),
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    """Obtiene el estado de configuración MFA del usuario"""
+    user = await auth_service.user_repository.find_by_username(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    return {
+        "configured": user.mfa is not None and user.mfa.secret is not None,
+        "enabled": user.mfa.enabled if user.mfa else False,
+        "last_used": user.mfa.last_used_at.isoformat() if user.mfa and user.mfa.last_used_at else None
+    }     
+    
+@router.post("/mfa/setup", response_model=MFASetupResponse)
+async def setup_mfa(
+    username: str = Form(...),
+    auth_service: AuthService = Depends(get_auth_service),
+    mfa_service: MFAService = Depends(get_mfa_service)
+):
+    """Configuración inicial de MFA"""
     try:
-        user = await auth_service.user_repository.get_user_by_username(username)
+        user = await auth_service.user_repository.find_by_username(username)
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario no encontrado"
-            )
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        # Si ya tiene MFA configurado, devolver los datos existentes
+        if user.mfa and user.mfa.secret:
+            uri = mfa_service.generate_provisioning_uri(username, user.mfa.secret)
+            qr_code = mfa_service.generate_qr_code(uri)
+            
+            return {
+                "setup_required": False,
+                "secret": user.mfa.secret,  # Solo para debug
+                "qr_code": qr_code,
+                "message": "MFA ya está configurado. Escanea el código QR nuevamente si es necesario."
+            }
+
+        # Generar nueva configuración
+        secret = mfa_service.generate_secret()
+        uri = mfa_service.generate_provisioning_uri(username, secret)
+        qr_code = mfa_service.generate_qr_code(uri)
         
         return {
-            "username": username,
-            "mfa_enabled": user.mfa_enabled,
-            "mfa_configured": user.mfa_enabled and user.mfa_secret is not None
+            "setup_required": True,
+            "secret": secret,
+            "qr_code": qr_code,
+            "message": "Escanea el código QR con tu app autenticadora"
         }
-    except HTTPException:
-        raise
+        
     except Exception as e:
-        logger.error(f"Error obteniendo estado MFA: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al obtener estado MFA"
-        )
-
-@router.get("/mfa/setup")
-async def setup_mfa(
-    username: str,
-    auth_service: AuthService = Depends(get_auth_service)
+        logger.error(f"Error en configuración MFA: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+ 
+        
+@router.post("/mfa/enable")
+async def enable_mfa(
+    username: str = Form(...),
+    code: str = Form(...),
+    secret: str = Form(...),
+    auth_service: AuthService = Depends(get_auth_service),
+    mfa_service: MFAService = Depends(get_mfa_service)
 ):
-    """Endpoint para configuración inicial de MFA"""
+    """Habilita MFA verificando el código inicial"""
     try:
-        # Verificar si el usuario existe
-        user = await auth_service.user_repository.get_user_by_username(username)
-        if not user:
+        logger.info(f"Secret recibido para {username}: {secret[:4]}...{secret[-4:]}")
+        
+        # Verificación con ventana ampliada
+        if not mfa_service.verify_code(secret, code, window=3):
+            current_time = time.time()
+            totp = pyotp.TOTP(secret)
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario no encontrado"
+                status_code=401,
+                detail={
+                    "message": "Código inválido",
+                    "expected_codes": {
+                        "previous": totp.at(current_time - 30),
+                        "current": totp.at(current_time),
+                        "next": totp.at(current_time + 30)
+                    }
+                }
             )
-        
-        # Verificar si ya tiene MFA configurado
-        if user.mfa_enabled and user.mfa_secret:
-            # El usuario ya tiene MFA configurado, no necesita configuración adicional
-            return MFASetupResponse(
-                setup_required=False,
-                message="MFA ya está configurado para este usuario"
-            )
-        
-        # Generar nuevo secreto MFA
-        secret = MFAService.generate_secret()
-        uri = MFAService.get_totp_uri(username, secret)
-        qr_code = MFAService.generate_qr_code(uri)
-        
-        # No guardamos el secreto todavía - esperamos que el usuario lo confirme
-        # con un código válido en el endpoint verify
-        
-        logger.info(f"Configuración MFA inicializada para {username}")
-        return MFASetupResponse(
-            setup_required=True,
+
+        # Guardar en base de datos
+        mfa_config = MFAConfig(
             secret=secret,
-            qr_code=qr_code,
-            uri=uri,
-            message="Escanea el código QR con tu aplicación autenticadora"
-        )
+            enabled=True,
+            backup_codes=[],
+            last_used_at=datetime.now(timezone.utc))
+        
+        updated = await auth_service.user_repository.update_user_mfa(username, mfa_config)
+        if not updated:
+            raise HTTPException(status_code=500, detail="Error al guardar MFA")
+
+        # Verificar guardado
+        user = await auth_service.user_repository.find_by_username(username)
+        logger.info(f"MFA guardado para {username}: {user.mfa.secret[:4]}...{user.mfa.secret[-4:]}")
+        
+        return {
+            "verified": True,
+            "access_token": await auth_service.create_access_token(user, mfa_verified=True),
+            "token_type": "bearer"
+        }
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error en setup MFA: {str(e)}")
+        logger.error(f"Error en enable_mfa: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error crítico en enable_mfa: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            status_code=500,
+            detail="Error interno del servidor al habilitar MFA"
         )
 
-@router.post("/mfa/verify")
+@router.post("/mfa/verify", response_model=MFAVerifyResponse)
 async def verify_mfa(
-    request_data: MFAVerifyRequest,
+    username: str = Form(...),
+    code: str = Form(...),
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    """
-    Endpoint unificado para verificación MFA que maneja:
-    1. Configuración inicial (cuando se envía el secreto)
-    2. Verificación normal (cuando no se envía secreto)
-    """
+    """Verificación estándar de código MFA para login"""
     try:
-        logger.info(f"Iniciando verificación MFA para {request_data.username}")
-        
-        # Obtener usuario
-        user = await auth_service.user_repository.get_user_by_username(request_data.username)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario no encontrado"
-            )
-        
-        # Determinar si es configuración inicial o verificación normal
-        if request_data.secret:
-            # Configuración inicial - verificar y guardar el secreto
-            if user.mfa_enabled and user.mfa_secret:
-                logger.warning(f"Intento de reconfiguración MFA para {request_data.username}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="El usuario ya tiene MFA configurado"
-                )
-            
-            if not MFAService.verify_code(request_data.secret, request_data.code):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Código MFA inválido para configuración inicial"
-                )
-            
-            # Guardar configuración MFA de forma persistente
-            user.mfa_enabled = True
-            user.mfa_secret = request_data.secret
-            await auth_service.user_repository.update_user(user)
-            
-            logger.info(f"MFA configurado correctamente para {request_data.username}")
-            return {
-                "verified": True,
-                "message": "MFA configurado exitosamente",
-                "is_initial_setup": True
-            }
-        else:
-            # Verificación normal - usar secreto almacenado
-            if not user.mfa_enabled or not user.mfa_secret:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="MFA no configurado para este usuario"
-                )
-            
-            if not MFAService.verify_code(user.mfa_secret, request_data.code):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Código MFA inválido"
-                )
-            
-            logger.info(f"Verificación MFA exitosa para {request_data.username}")
-            return {
-                "verified": True,
-                "message": "Verificación MFA exitosa",
-                "is_initial_setup": False
-            }
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error en verify_mfa: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en el servidor: {str(e)}"
-        )
-
-@router.post("/token")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    auth_service: AuthService = Depends(get_auth_service)
-):
-    """Inicio de sesión estándar, verifica credenciales y determina si se requiere MFA"""
-    user = await auth_service.authenticate_user(form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Determinar si el usuario necesita configurar MFA o solo verificar
-    mfa_status = {
-        "mfa_required": True,
-        "username": user.username,
-    }
-    
-    # Si el usuario no tiene MFA configurado, indicar que debe configurarlo
-    if not user.mfa_enabled or not user.mfa_secret:
-        mfa_status["setup_required"] = True
-        mfa_status["message"] = "Se requiere configuración MFA"
-    else:
-        mfa_status["setup_required"] = False
-        mfa_status["message"] = "Ingrese el código MFA"
-    
-    return JSONResponse(
-        status_code=status.HTTP_202_ACCEPTED,
-        content=mfa_status
-    )
-
-@router.post("/token/mfa")
-async def login_with_mfa(
-    request_data: MFATokenRequest,
-    auth_service: AuthService = Depends(get_auth_service)
-):
-    """Genera token JWT después de verificación MFA exitosa"""
-    try:
-        logger.info(f"Generando token MFA para {request_data.username}")
-        
-        # 1. Verificar usuario
-        user = await auth_service.user_repository.get_user_by_username(request_data.username)
-        if not user:
-            logger.error(f"Usuario no encontrado: {request_data.username}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario no encontrado"
-            )
-        
-        # 2. Verificar que tenga MFA configurado
-        if not user.mfa_enabled or not user.mfa_secret:
-            logger.error(f"Usuario sin MFA configurado: {request_data.username}")
+        user = await auth_service.user_repository.find_by_username(username)
+        if not user or not user.mfa or not user.mfa.secret:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="MFA no configurado para este usuario"
             )
         
-        # 3. Verificar código con el secreto almacenado previamente
-        if not MFAService.verify_code(user.mfa_secret, request_data.code):
-            logger.error(f"Código MFA inválido para {request_data.username}")
+        # Verificar código
+        if not await auth_service.verify_mfa_login(username, code):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Código MFA inválido"
             )
         
-        # 4. Generar token
-        access_token = await auth_service.create_access_token(user.username)
+        # Actualizar último uso
+        await auth_service.user_repository.update_user_mfa(
+            username=username,
+            mfa_config=MFAConfig(
+                secret=user.mfa.secret,
+                enabled=True,
+                backup_codes=user.mfa.backup_codes,
+                last_used_at=datetime.now(timezone.utc))
+        )
         
-        logger.info(f"Token generado exitosamente para {request_data.username}")
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "username": user.username
-        }
+        # Generar token
+        access_token = await auth_service.create_access_token(user, mfa_verified=True)
+        
+        return MFAVerifyResponse(
+            verified=True,
+            message="Verificación MFA exitosa",
+            is_initial_setup=False,
+            access_token=access_token,
+            token_type="bearer",
+            username=user.username
+        )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error en login_with_mfa: {str(e)}", exc_info=True)
+        logger.error(f"Error en verificación MFA: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error generando token de acceso"
+            detail="Error en verificación MFA"
+        )
+
+@router.post("/token", response_model=TokenResponse)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """Endpoint principal de login con manejo de MFA"""
+    try:
+        # 1. Autenticar usuario
+        user = await auth_service.authenticate_user(form_data.username, form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciales incorrectas",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # 2. Verificar estado MFA
+        has_mfa = user.mfa is not None
+        mfa_configured = has_mfa and user.mfa.secret is not None
+        mfa_enabled = has_mfa and user.mfa.enabled
+
+        # 3. Determinar flujo
+        if mfa_configured and mfa_enabled:
+            # Usuario con MFA activo - requerir verificación
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content={
+                    "mfa_required": True,
+                    "username": user.username,
+                    "setup_required": False,
+                    "message": "Ingrese su código MFA"
+                }
+            )
+        elif mfa_configured and not mfa_enabled:
+            # Usuario con MFA configurado pero no activado
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content={
+                    "mfa_required": True,
+                    "username": user.username,
+                    "setup_required": True,
+                    "message": "Complete la configuración MFA"
+                }
+            )
+        
+        # 4. Usuario sin MFA - token directo
+        access_token = await auth_service.create_access_token(user, mfa_verified=not mfa_configured)
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer"
+        )
+
+    except Exception as e:
+        logger.error(f"Error en login: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno del servidor"
         )
 
 @router.post("/auth/login")
@@ -313,58 +314,6 @@ async def login(
         })
     
     return JSONResponse(status_code=202, content=response)
-
-
-@router.post("/auth/verify-mfa")
-async def verify_mfa_login(
-    request: MFAVerifyRequest,
-    auth_service: AuthService = Depends(get_auth_service)
-):
-    """Verifica código MFA (para ambos flujos) y genera token de acceso"""
-    # Obtener usuario
-    user = await auth_service.user_repository.get_user_by_username(request.username)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
-    
-    # Determinar si es configuración inicial o verificación normal
-    if request.secret:
-        # Configuración inicial - verificar y guardar el secreto
-        if not MFAService.verify_code(request.secret, request.code):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Código MFA inválido para configuración inicial"
-            )
-        
-        # Guardar configuración MFA de forma persistente
-        user.mfa_enabled = True
-        user.mfa_secret = request.secret
-        await auth_service.user_repository.update_user(user)
-        
-        logger.info(f"MFA configurado correctamente para {request.username}")
-    else:
-        # Verificación normal - usar secreto almacenado
-        if not user.mfa_enabled or not user.mfa_secret:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="MFA no configurado para este usuario"
-            )
-        
-        if not MFAService.verify_code(user.mfa_secret, request.code):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Código MFA inválido"
-            )
-    
-    # Generar token JWT
-    access_token = await auth_service.create_access_token(request.username)
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "username": user.username
-    }
 
 # Mantener endpoints de debug para propósitos de desarrollo
 
@@ -405,39 +354,98 @@ async def debug_secret(secret: str):
         )
 
 @router.get("/mfa/time-sync-check")
-async def time_sync_check(secret: str = Query(...)):
-    """Endpoint para verificar sincronización de tiempo"""
+async def time_sync_check(
+    username: str = Query(...),
+    secret: str = Query(None),  # Nuevo parámetro opcional
+    auth_service: AuthService = Depends(get_auth_service),
+    mfa_service: MFAService = Depends(get_mfa_service)
+):
+    #Endpoint para verificar sincronización de tiempo#
     try:
-        totp = pyotp.TOTP(secret)
+        # Si se proporciona un secret, usarlo (para configuración inicial)
+        # Si no, usar el secret del usuario (para verificación normal)
+        if secret:
+            current_secret = secret
+        else:
+            user = await auth_service.user_repository.find_by_username(username)
+            if not user or not user.mfa or not user.mfa.secret:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="MFA no configurado para este usuario"
+                )
+            current_secret = user.mfa.secret
+        
+        totp = pyotp.TOTP(current_secret)
         current_time = time.time()
         time_step = current_time % 30
         
+        # Generar códigos válidos en ventana ampliada
+        valid_codes = []
+        for i in range(-2, 3):  # -2, -1, 0, 1, 2 (ventana más amplia)
+            valid_time = current_time + (i * 30)
+            valid_codes.append({
+                "offset": i,
+                "code": totp.at(valid_time),
+                "valid_for": f"{i*30} segundos"
+            })
+        
         return {
+            "username": username,
             "current_time": datetime.fromtimestamp(current_time).isoformat(),
             "time_step_remaining": 30 - time_step,
             "current_code": totp.now(),
-            "is_time_synced": True  # Implementar lógica real de verificación
+            "valid_codes": valid_codes,
+            "time_synced": True,
+            "message": "Verifique que el reloj de su dispositivo esté sincronizado"
         }
+        
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Error en verificación de tiempo: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-
-@router.post("/mfa/verify-only")
-async def verify_mfa_only(
-    request: MFATokenRequest,
-    auth_service: AuthService = Depends(get_auth_service)
+        
+@router.post("/mfa/toggle")
+async def toggle_mfa(
+    username: str = Form(...),
+    enable: bool = Form(...),
+    auth_service: AuthService = Depends(get_auth_service),
+    current_user: UserBase = Depends(get_current_user)  # Seguridad adicional
 ):
-    user = await auth_service.user_repository.get_user_by_username(request.username)
-    if not user or not user.mfa_configured:
-        raise HTTPException(status_code=403, detail="Acceso no autorizado")
+    """Habilita/deshabilita MFA sin regenerar secret"""
+    # Verificar que el usuario solo modifique su propio MFA
+    if current_user.username != username:
+        raise HTTPException(status_code=403, detail="No puede modificar otro usuario")
     
-    if not MFAService.verify_code(user.mfa_secret, request.code):
-        raise HTTPException(status_code=401, detail="Código inválido")
+    user = await auth_service.user_repository.find_by_username(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    return {"verified": True}
-
+    # Validar si intenta activar sin tener secret
+    if enable and not (user.mfa and user.mfa.secret):
+        raise HTTPException(
+            status_code=400,
+            detail="Configure MFA primero usando /mfa/setup"
+        )
+    
+    # Preservar los datos existentes
+    mfa_config = MFAConfig(
+        secret=user.mfa.secret if user.mfa else None,
+        enabled=enable,
+        backup_codes=user.mfa.backup_codes if user.mfa else [],
+        last_used_at=datetime.now(timezone.utc) if enable else None
+    )
+    
+    await auth_service.user_repository.update_user_mfa(username, mfa_config)
+    
+    return {
+        "enabled": enable,
+        "message": f"MFA {'habilitado' if enable else 'deshabilitado'}",
+        "requires_verification": enable  # Frontend puede pedir código si se reactiva
+    }
 @router.get("/login/microsoft")
 async def login(
     auth_service:AuthServiceSSO = Depends(get_auth_service_sso) 
@@ -478,16 +486,15 @@ async def info_users_sso(
         )
 
 
-
 @router.post("/logout")
 async def logout(
     token: str = Depends(oauth2_scheme),
-    current_user: User = Depends(get_current_user)
+    current_user: UserBase = Depends(get_current_user)
 ):
     invalidate_token(token)
     return {"message": "Sesión cerrada exitosamente"}
 
 
 @router.get("/protected-route")
-async def protected_route(user: User = Depends(get_current_user)):
+async def protected_route(user: UserBase = Depends(get_current_user)):
     return {"message": f"Hola {user.username}, estas autenticado!"}

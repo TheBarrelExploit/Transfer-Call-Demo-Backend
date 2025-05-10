@@ -108,14 +108,3 @@ class MicrosoftAuthService(AuthServiceSSO):
         except JWTError:
             return None
         
-        
-
-
-
-
-
-
-
-
-
-

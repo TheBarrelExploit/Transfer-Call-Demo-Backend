@@ -7,7 +7,10 @@ from contextlib import asynccontextmanager
 from src.users.interfaces.web.v1.routers import router as users_router_v1
 from src.auth.interfaces.web.v1.routers import router as auth_router_v1
 from src.auth.infrastructure.security import get_password_hash
-
+from dataclasses import asdict
+from src.users.domain.models import UserBase, MFAConfig
+import ntplib
+from datetime import datetime, timezone
 #get settings from environment variables
 
 settings = get_settings()
@@ -26,16 +29,26 @@ async def lifespan(app:FastAPI):
     # Crear usuario de prueba si no existe
     users_col = mongo.get_collection("users")
     if await users_col.count_documents({"username": "testuser"}) == 0:
-        from src.auth.domain.entities import User
-        test_user = User(
-        username="testuser",
-        email="test@example.com",
-        hashed_password=get_password_hash("testpassword"),  # Esto generará un nuevo hash válido
-        disabled=False,
-        full_name="Usuario de Prueba"
-    )
-        await users_col.insert_one(test_user.dict())
-
+        from src.users.domain.models import UserBase, AuthProvider
+        test_user = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password_hash": get_password_hash("testpassword"),
+            "entity": "test",
+            "auth_provider": "local",
+            "complete_profile": True,
+            "roles": ["user"],
+            "mfa": {
+                "secret": None, 
+                "enabled": False,  
+                "backup_codes": [],
+                "last_used_at": None
+            }
+        }
+        if await users_col.count_documents({"username": "testuser"}) == 0:
+            await users_col.insert_one(test_user)
+            logger.info("Usuario de prueba creado exitosamente")
+    
     yield
     
     # Close MongoDB connection

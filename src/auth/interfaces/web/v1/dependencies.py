@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordBearer
 from src.shared.database.mongodb import MongoDB
 from src.shared.config import get_settings
 from src.users.application.services import UserService
-from src.auth.infrastructure.repositories import MongoDBUserRepository
 from src.auth.infrastructure.microsoft_sso import MicrosoftSSORepository
+from src.auth.infrastructure.mfa import MFAService
 from src.auth.infrastructure.security import (
     verify_password,
     create_access_token,
@@ -13,13 +13,14 @@ from src.auth.infrastructure.security import (
 )
 from src.auth.application.services import AuthService
 from src.auth.application.use_cases import MicrosoftAuthService
-from src.auth.domain.entities import User 
-from src.users.domain.models import UserBase #
+from src.users.domain.models import UserBase
 from src.users.infrastructure.repositories import DBUserRepository
 from src.users.domain.ports import UserRepository
 from typing import Annotated
-from motor.motor_asyncio import  AsyncIOMotorCollection, AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from jose import JWTError
+
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
@@ -29,24 +30,22 @@ async def get_mongo() -> MongoDB:
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
     return mongo
 
-async def get_user_repository(mongo: MongoDB = Depends(get_mongo)) -> MongoDBUserRepository:
-    return MongoDBUserRepository(mongo)
-
-async def get_auth_service(user_repo: MongoDBUserRepository = Depends(get_user_repository)) -> AuthService:
-    return AuthService(user_repo)
-
-
-def get_mongo(request: Request) -> MongoDB:
+def get_mongo_from_app(request: Request) -> MongoDB:
     return request.app.state.mongo
 
-def get_db(mongo: Annotated[MongoDB, Depends(get_mongo)]) -> AsyncIOMotorDatabase:
+def get_db(
+    mongo: Annotated[MongoDB, Depends(get_mongo_from_app)]
+) -> AsyncIOMotorDatabase:
     return mongo.get_database()
 
-def get_users_collection(db: Annotated[AsyncIOMotorDatabase, Depends(get_db)]) -> AsyncIOMotorCollection:
+def get_users_collection(
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)]
+) -> AsyncIOMotorCollection:
     return db.get_collection("users")
 
 def get_user_repository(
-    collection: Annotated[AsyncIOMotorCollection, Depends(get_users_collection)]) -> UserRepository:
+    collection: Annotated[AsyncIOMotorCollection, Depends(get_users_collection)]
+) -> UserRepository:
     return DBUserRepository(collection)
 
 def get_user_service(
@@ -54,16 +53,27 @@ def get_user_service(
 ) -> UserService:
     return UserService(repo)
 
+def get_mfa_service() -> MFAService:
+    return MFAService()
+
 async def get_auth_microsoft_repository() -> MicrosoftSSORepository:
     return MicrosoftSSORepository()
 
-async def get_auth_service_sso(user_repo: UserService = Depends(get_user_service), sso_auth: MicrosoftSSORepository= Depends(get_auth_microsoft_repository) ) -> MicrosoftAuthService:
+async def get_auth_service_sso(
+    user_repo: UserService = Depends(get_user_service),
+    sso_auth: MicrosoftSSORepository = Depends(get_auth_microsoft_repository)
+) -> MicrosoftAuthService:
     return MicrosoftAuthService(user_repo, sso_auth)
 
+async def get_auth_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    mfa_service: MFAService = Depends(get_mfa_service)
+) -> AuthService:
+    return AuthService(user_repo, mfa_service)
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    user_repo: DBUserRepository = Depends(get_user_repository)
+    user_repo: UserRepository = Depends(get_user_repository)
 ) -> UserBase:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -77,11 +87,11 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token invalidado"
             )
-            
+
         payload = verify_token(token)
         if payload is None:
             raise credentials_exception
-            
+
         sub: str = payload.get("sub")
         if sub is None:
             raise credentials_exception
@@ -91,5 +101,5 @@ async def get_current_user(
     user = await user_repo.find_by_id(sub)
     if user is None:
         raise credentials_exception
-        
+
     return user
