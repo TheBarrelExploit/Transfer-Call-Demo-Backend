@@ -1,18 +1,24 @@
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+    AsyncIOMotorDatabase,
+    AsyncIOMotorCollection,
+)
 from pymongo.errors import ConnectionFailure
 from typing import Optional
 
 
 logger = logging.getLogger(__name__)
 
+
 class MongoDB:
     """
-        mongoDB connection manager
+    mongoDB connection manager
     """
-    _instance:Optional['MongoDB'] = None
+
+    _instance: Optional["MongoDB"] = None
     _client: Optional[AsyncIOMotorClient] = None
-    _db:Optional[AsyncIOMotorDatabase] =None
+    _db: Optional[AsyncIOMotorDatabase] = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -20,17 +26,17 @@ class MongoDB:
             cls._client = None
             cls._db = None
         return cls._instance
-    
+
     async def connect(self, uri: str, db_name: str):
         """
-            connect to mongoDB
+        connect to mongoDB
         """
         if self._client is None:
             try:
                 logger.info("connecting to MongoDB...")
                 self._client = AsyncIOMotorClient(uri, maxPoolSize=10)
 
-                await self._client.admin.command('ping')
+                await self._client.admin.command("ping")
                 logger.info("MongoDB connected")
 
                 self._db = self._client[db_name]
@@ -39,8 +45,8 @@ class MongoDB:
                 raise
         else:
             logger.warning("MongoDB already connected")
-        
-    def get_database(self)-> AsyncIOMotorDatabase:
+
+    def get_database(self) -> AsyncIOMotorDatabase:
         """get database from mongoDB
 
         Raises:
@@ -49,22 +55,22 @@ class MongoDB:
         Returns:
             AsyncIOMotorDatabase: database mongoDB
         """
-            
+
         if self._db is None:
             raise ConnectionError("MongoDB not connected")
         return self._db
-    
-    def get_collection(self, collection_name: str)->AsyncIOMotorCollection:
+
+    def get_collection(self, collection_name: str) -> AsyncIOMotorCollection:
         """
-            get collection from mongoDB
+        get collection from mongoDB
         """
         if self._db is None:
             raise ConnectionError("MongoDB not connected")
         return self._db[collection_name]
-    
+
     async def close(self):
         """
-            close mongoDB connection
+        close mongoDB connection
         """
         if self._client is not None:
             self._client.close()

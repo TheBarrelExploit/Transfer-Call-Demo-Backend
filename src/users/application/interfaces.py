@@ -21,7 +21,7 @@ class UserServiceUser(ABC):
         pass
 
     @abstractmethod
-    async def create_user_sso(self, user:UserBase) -> UserBase:
+    async def create_user_sso(self, user: UserBase) -> UserBase:
         pass
 
     @abstractmethod

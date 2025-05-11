@@ -6,43 +6,43 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.models import UserBase, MFAConfig
 from ..domain.ports import UserRepository
 
+
 class DBUserRepository(UserRepository):
     def __init__(self, collection: AsyncIOMotorCollection):
         self.collection = collection
-    
+
     async def find_by_id(self, id: str) -> UserBase | None:
         user_data = await self.collection.find_one({"_id": ObjectId(id)})
         return UserBase.from_mongo(user_data) if user_data else None
-    
-    async def find_by_id_microsoft(self, id:str):
+
+    async def find_by_id_microsoft(self, id: str):
         user_data = await self.collection.find_one({"microsoft_id_account": id})
         return UserBase.from_mongo(user_data) if user_data else None
-        
-    async def find_by_email(self, email:str) -> UserBase | None:
+
+    async def find_by_email(self, email: str) -> UserBase | None:
         user_data = await self.collection.find_one({"email": email})
         return UserBase.from_mongo(user_data) if user_data else None
-    
-    async def create(self, user:UserBase) -> UserBase | None:
+
+    async def create(self, user: UserBase) -> UserBase | None:
         data = asdict(user)
         data.pop("_id", None)
-        if 'auth_provider' in data and hasattr(data['auth_provider'], 'value'):
-            data['auth_provider'] = data['auth_provider'].value
+        if "auth_provider" in data and hasattr(data["auth_provider"], "value"):
+            data["auth_provider"] = data["auth_provider"].value
         result = await self.collection.insert_one(data)
         user._id = str(result.inserted_id)
         return user
-   
-    async def update(self, id:str, data:dict) -> Optional[UserBase]:
+
+    async def update(self, id: str, data: dict) -> Optional[UserBase]:
         await self.collection.update_one(
-            {"_id":ObjectId(id)},
-            {"$set": {**data, "updated_at": datetime.now(timezone.utc)}}
+            {"_id": ObjectId(id)},
+            {"$set": {**data, "updated_at": datetime.now(timezone.utc)}},
         )
         return await self.find_by_id(id)
-    
+
     async def delete(self, id):
-        result = await self.collection.delete_one(
-            {"_id":ObjectId(id)})
+        result = await self.collection.delete_one({"_id": ObjectId(id)})
         return result.deleted_count > 0
-        
+
     async def list(self, skip: int = 0, limit: int = 100) -> List[UserBase]:
         cursor = self.collection.find().skip(skip).limit(limit)
         usuarios = []
@@ -54,11 +54,11 @@ class DBUserRepository(UserRepository):
         user_data = await self.collection.find_one({"username": username})
         if not user_data:
             return None
-        
+
         # Asegurar que mfa existe como diccionario
         if "mfa" not in user_data:
             user_data["mfa"] = asdict(MFAConfig())
-        
+
         # Convertir a UserBase
         try:
             return UserBase.from_mongo(user_data)
@@ -69,9 +69,13 @@ class DBUserRepository(UserRepository):
     async def update_user_mfa(self, username: str, mfa_config: MFAConfig) -> bool:
         result = await self.collection.update_one(
             {"username": username},
-            {"$set": {
-                "mfa": asdict(mfa_config),
-                "updated_at": datetime.now(timezone.utc)  # <-- Quita los paréntesis
-            }}
+            {
+                "$set": {
+                    "mfa": asdict(mfa_config),
+                    "updated_at": datetime.now(
+                        timezone.utc
+                    ),  # <-- Quita los paréntesis
+                }
+            },
         )
         return result.modified_count > 0

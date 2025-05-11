@@ -1,10 +1,10 @@
 from fastapi import Request, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from typing import Annotated
-from src.users.domain.ports import UserRepository
-from src.users.infrastructure.repositories import DBUserRepository
-from src.users.application.services import UserService
+from src.tarificador.domain.ports import CallRepositoryDomain
+from src.tarificador.infrastructure.repository import CallRepository
 from src.shared.database.mongodb import MongoDB
+from src.tarificador.application.services import CallService
 
 
 def get_mongo(request: Request) -> MongoDB:
@@ -18,16 +18,16 @@ def get_db(mongo: Annotated[MongoDB, Depends(get_mongo)]) -> AsyncIOMotorDatabas
 def get_users_collection(
     db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ) -> AsyncIOMotorCollection:
-    return db.get_collection("users")
+    return db.get_collection("llamadas")
 
 
 def get_user_repository(
     collection: Annotated[AsyncIOMotorCollection, Depends(get_users_collection)],
-) -> UserRepository:
-    return DBUserRepository(collection)
+) -> CallRepository:
+    return CallRepository(collection)
 
 
 def get_user_service(
-    repo: Annotated[UserRepository, Depends(get_user_repository)],
-) -> UserService:
-    return UserService(repo)
+    repo: Annotated[CallRepository, Depends(get_user_repository)],
+) -> CallService:
+    return CallService(repo)

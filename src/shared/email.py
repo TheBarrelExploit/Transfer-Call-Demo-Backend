@@ -5,6 +5,7 @@ settings = get_settings()
 
 conf = ConnectionConfig()
 
+
 async def send_email_with_report():
     message = MessageSchema()
 

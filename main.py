@@ -6,30 +6,32 @@ from src.shared.database.mongodb import MongoDB
 from contextlib import asynccontextmanager
 from src.users.interfaces.web.v1.routers import router as users_router_v1
 from src.auth.interfaces.web.v1.routers import router as auth_router_v1
+from src.tarificador.interfaces.web.v1.routers import router as call_router_v1
 from src.auth.infrastructure.security import get_password_hash
 from dataclasses import asdict
 from src.users.domain.models import UserBase, MFAConfig
-import ntplib
 from datetime import datetime, timezone
-#get settings from environment variables
+# get settings from environment variables
 
 settings = get_settings()
 
+
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
     """
-        Lifespan event for the FastAPI application.
-        Connect to MongoDB and close the connection when the app stops.
+    Lifespan event for the FastAPI application.
+    Connect to MongoDB and close the connection when the app stops.
     """
     # Connect to MongoDB
     mongo = MongoDB()
     app.state.mongo = mongo
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
-    
+
     # Crear usuario de prueba si no existe
     users_col = mongo.get_collection("users")
     if await users_col.count_documents({"username": "testuser"}) == 0:
         from src.users.domain.models import UserBase, AuthProvider
+
         test_user = {
             "username": "testuser",
             "email": "test@example.com",
@@ -39,31 +41,32 @@ async def lifespan(app:FastAPI):
             "complete_profile": True,
             "roles": ["user"],
             "mfa": {
-                "secret": None, 
-                "enabled": False,  
+                "secret": None,
+                "enabled": False,
                 "backup_codes": [],
-                "last_used_at": None
-            }
+                "last_used_at": None,
+            },
         }
         if await users_col.count_documents({"username": "testuser"}) == 0:
             await users_col.insert_one(test_user)
             logger.info("Usuario de prueba creado exitosamente")
-    
+
     yield
-    
+
     # Close MongoDB connection
     await mongo.close()
 
+
 app = FastAPI(
-    title= settings.APP_NAME,
+    title=settings.APP_NAME,
     description="FastAPI Transfer Call",
     version="0.1.0",
     lifespan=lifespan,
     swagger_ui_oauth2_redirect_url="/oauth2-redirect",
     swagger_ui_init_oauth={
         "usePkceWithAuthorizationCodeGrant": True,
-        "clientId": "your-client-id"
-    }
+        "clientId": "your-client-id",
+    },
 )
 
 app.swagger_ui_init_oauth = {
@@ -72,11 +75,7 @@ app.swagger_ui_init_oauth = {
 
 app.openapi_components = {
     "securitySchemes": {
-        "Bearer": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT"
-        }
+        "Bearer": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
     }
 }
 
@@ -100,6 +99,7 @@ app.add_middleware(
 # Incluir routers
 app.include_router(auth_router_v1, prefix="/api")
 app.include_router(users_router_v1, prefix="/api")
+app.include_router(call_router_v1, prefix="/api")
 
 
 @app.get("/")
@@ -110,53 +110,59 @@ async def read_root():
     print(result)
     return {"message": "Transfer-Call-Demo API is running"}
 
+
 from fastapi import Request
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @app.middleware("http")
 async def debug_cors_middleware(request: Request, call_next):
     # Loggear información de la solicitud entrante
-    logger.info(f"\n{'='*50}\nCORS DEBUG - Request Incoming\n"
-                f"Origin: {request.headers.get('origin')}\n"
-                f"Method: {request.method}\n"
-                f"Path: {request.url.path}\n"
-                f"Headers: {request.headers}\n"
-                f"{'='*50}")
-    
+    logger.info(
+        f"\n{'=' * 50}\nCORS DEBUG - Request Incoming\n"
+        f"Origin: {request.headers.get('origin')}\n"
+        f"Method: {request.method}\n"
+        f"Path: {request.url.path}\n"
+        f"Headers: {request.headers}\n"
+        f"{'=' * 50}"
+    )
+
     response = await call_next(request)
-    
+
     # Añadir headers CORS manualmente si es necesario
-    origin = request.headers.get('origin')
+    origin = request.headers.get("origin")
     if origin in [
         "http://127.0.0.1:5500",
         "http://localhost:5500",
         "http://127.0.0.1:8001",
-        "http://localhost:8001"
+        "http://localhost:8001",
     ]:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
-    
+
     # Loggear información de la respuesta
-    logger.info(f"\n{'='*50}\nCORS DEBUG - Response Outgoing\n"
-                f"Status: {response.status_code}\n"
-                f"Headers: {response.headers}\n"
-                f"{'='*50}")
-    
+    logger.info(
+        f"\n{'=' * 50}\nCORS DEBUG - Response Outgoing\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"{'=' * 50}"
+    )
+
     return response
+
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('app.log')
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("app.log")],
 )
 
 if __name__ == "__main__":
     try:
-        subprocess.run(["fastapi","dev","main.py","--port", str(settings.PORT), "--reload"])
+        subprocess.run(
+            ["fastapi", "dev", "main.py", "--port", str(settings.PORT), "--reload"]
+        )
     except KeyboardInterrupt:
         print("Server stopped.")
