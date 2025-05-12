@@ -31,6 +31,36 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_ALGORITHM: str
     JWT_EXPIRATION: int  # in minutes
+    
+    
+    # Email settings (para fastapi-mail)
+    MAIL_USERNAME: str  # moralespaola888@gmail.com (del .env)
+    MAIL_PASSWORD: str  # app password (del .env)
+    MAIL_FROM: str  # moralespaola888@gmail.com (del .env)
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_FROM_NAME: str = "tarificadorFastApi"
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+    MAIL_USE_CREDENTIALS: bool = True
+    MAIL_DISPLAY_NAME: str = "tarificadorFastApi"
+    MAIL_TLS: bool = False
+
+    
+    """ # Email settings
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_FROM_NAME: str = "tarificadorFastApi"
+    MAIL_SSL_TLS: bool = False
+    MAIL_USE_CREDENTIALS: bool = True
+    MAIL_VALIDATE_CERTS: bool = True
+    MAIL_DISPLAY_NAME: str = "tarificadorFastApi"
+    MAIL_STARTTLS: bool = True
+    MAIL_TLS: bool = False """
+    
 
     """Settings .env file"""
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)

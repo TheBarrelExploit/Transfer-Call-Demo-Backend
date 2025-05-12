@@ -90,7 +90,7 @@ def verify_token(token: str):
         
         #validacion adicional para el payload, por si no esta ni id ni username
         if "id" not in payload and "sub "not in payload:
-            logger.warning("oken no contiene identificador de usuario")
+            logger.warning("Token no contiene identificador de usuario")
             return None
         
         return payload

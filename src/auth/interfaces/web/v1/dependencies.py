@@ -19,7 +19,9 @@ from src.users.domain.ports import UserRepository
 from typing import Annotated
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from jose import JWTError
+import logging
 
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
@@ -85,6 +87,56 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     user_repo: UserRepository = Depends(get_user_repository),
 ) -> UserBase:
+    if token == "undefined":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token no proporcionado"
+        )
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        if is_token_blacklisted(token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalidado"
+            )
+
+        payload = verify_token(token)
+        if payload is None:
+            raise credentials_exception
+
+        # Primero intentamos obtener el ID del usuario
+        user_id: str = payload.get("id")
+        
+        # Si no hay ID, fallamos al username (para retrocompatibilidad)
+        if user_id:
+            user = await user_repo.find_by_id(user_id)
+        else:
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+            user = await user_repo.find_by_username(username)
+            
+        if user is None:
+            raise credentials_exception
+
+        return user
+    except JWTError:
+        raise credentials_exception
+    except Exception as e:
+        logger.error(f"Error en get_current_user: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno del servidor al validar usuario"
+        )
+
+async def get_current_user_sso(
+    token: str = Depends(oauth2_scheme),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> UserBase:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -111,4 +163,4 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
 
-    return user
+    return user 
