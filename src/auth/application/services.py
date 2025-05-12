@@ -48,8 +48,11 @@ class AuthService:
     ) -> str:
         # Crea un token JWT compatible con la estructura actual
         token_data = {
+            "id": str(user._id) if hasattr(user, "_id") else None,  
             "sub": user.username,
+            "username": user.username, 
             "email": user.email,
+            "entity": user.entity,  
             "roles": user.roles,
             "mfa_verified": mfa_verified,
             # Maneja tanto AuthProvider enum como string
