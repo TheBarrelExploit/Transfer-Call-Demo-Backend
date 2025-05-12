@@ -307,35 +307,32 @@ async def login_for_access_token(
         )
 
 
-@router.post("/auth/login")
+@router.post("/login")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service),
 ):
     user = await auth_service.authenticate_user(form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        raise HTTPException(status_code=401, 
+                            detail="Credenciales inválidas")
 
-    response = {"username": user.username, "authenticated": True}
-
-    if user.mfa_configured:  # Usar el nuevo campo
-        response.update(
-            {
-                "mfa_required": True,
-                "setup_required": False,
-                "message": "Ingrese el código de verificación",
-            }
-        )
-    else:
-        response.update(
-            {
-                "mfa_required": True,
-                "setup_required": True,
-                "message": "Configure MFA por primera vez",
-            }
-        )
-
-    return JSONResponse(status_code=202, content=response)
+    
+    
+    # Generar token de acceso
+    access_token = await auth_service.create_access_token(user)
+    
+    # Convertir usuario a UserResponse
+    user_dict = asdict(user)
+    user_response = UserResponse.model_validate(user_dict)
+    
+    # Preparar respuesta
+    response_data = {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_response.model_dump()
+    }
+    return response_data
 
 
 # Mantener endpoints de debug para propósitos de desarrollo

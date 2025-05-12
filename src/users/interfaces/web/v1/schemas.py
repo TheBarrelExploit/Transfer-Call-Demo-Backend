@@ -25,10 +25,10 @@ class AuthProvider(str, Enum):
 
 
 class MFAConfigSchema(BaseModel):
-    secret: Optional[str] = None
+    #secret: Optional[str] = None
     enabled: bool = False
-    backup_codes: List[str] = []
-    last_used_at: Optional[datetime] = None
+    #backup_codes: List[str] = []
+    #last_used_at: Optional[datetime] = None
 
 
 class UserCreateRequest(BaseModel):
