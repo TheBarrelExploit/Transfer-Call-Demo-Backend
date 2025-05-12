@@ -19,3 +19,19 @@ class CallRepositoryDomain(ABC):
     @abstractmethod
     async def find_call_by_date_range(self, start_date: str, end_date: str) -> CallBase:
         pass
+
+    @abstractmethod
+    async def find_call_by_class_call(self, class_call: str) -> CallBase:
+        pass
+
+    @abstractmethod
+    async def find_call_by_type_of_call(self, type_of_call: str) -> CallBase:
+        pass
+
+    @abstractmethod
+    async def find_call_by_kind_of_call(self, kind_of_call: str) -> CallBase:
+        pass
+
+    @abstractmethod
+    async def find_call_by_filter(self, data: List[str]) -> CallBase:
+        pass

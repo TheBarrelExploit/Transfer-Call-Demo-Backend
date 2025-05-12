@@ -73,9 +73,9 @@ class MicrosoftAuthService(AuthServiceSSO):
 
     async def create_access_token(self, user: UserBase):
         payload = {
-            "sub": str(user.id),
+            "id":str(user.id),
+            "sub": str(user.username),
             "email": user.email,
-            "name": user.username,
             "roles": user.roles,
             "auth_provider": user.auth_provider,
             "exp": datetime.now(timezone.utc)

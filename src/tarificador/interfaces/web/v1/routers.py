@@ -28,7 +28,7 @@ async def call_all(call_service: CallService = Depends(get_user_service)):
     "/call_by_date_range", response_model=CallResponse, status_code=status.HTTP_200_OK
 )
 async def call_by_date(
-    start_date: Optional[str] = None ,
+    start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     call_service: CallService = Depends(get_user_service),
 ):
@@ -38,7 +38,7 @@ async def call_by_date(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="start date and end date are required",
             )
-        
+
         if start_date and not end_date:
             end_date = start_date
 
@@ -56,19 +56,89 @@ async def call_by_date(
 
 
 @router.get(
-    "/call_by_originational", response_model=CallResponse, status_code=status.HTTP_200_OK
+    "/call_by_originational",
+    response_model=CallResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def call_by_dialed(
     originational_number: str,
     call_service: CallService = Depends(get_user_service),
 ):
     try:
-        print(originational_number)
         call_data = await call_service.get_call_by_dialed_number(originational_number)
         call_data_validate = [
             CallBaseResponse.model_validate(asdict(call)) for call in call_data
         ]
 
         return CallResponse(data=call_data_validate)
+    except CallNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/call_by_connected",
+    response_model=CallResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def call_by_connected_number(
+    connected_number: str, call_service: CallService = Depends(get_user_service)
+):
+    try:
+        call_data = await call_service.get_call_by_connected_number(
+            connected_number=connected_number
+        )
+        call_data_validate = [CallBaseResponse.model_validate(asdict(call)) for call in call_data]
+
+        return CallResponse(data=call_data_validate)
+    except CallNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/call_by_type_of_call", response_model=CallResponse, status_code=status.HTTP_200_OK
+)
+async def call_by_type_of_call(
+    type_of_call: str, call_service: CallService = Depends(get_user_service)
+):
+    try:
+        call_data = await call_service.get_call_by_type_of_call(
+            type_of_call=type_of_call
+        )
+        call_data_validate = [CallBaseResponse.model_validate(asdict(call)) for call in call_data]
+
+        return CallResponse(data=call_data_validate)
+    except CallNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/call_by_class_call", response_model=CallResponse, status_code=status.HTTP_200_OK
+)
+async def call_by_class_call(
+    class_call: str, call_service: CallService = Depends(get_user_service)
+):
+    try:
+        call_data = await call_service.get_call_by_class_call(class_call=class_call)
+        call_data_validate = [CallBaseResponse.model_validate(asdict(call)) for call in call_data]
+
+        return CallResponse(data=call_data_validate)
+    except CallNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/call_by_kind_of_call", response_model=CallResponse, status_code=status.HTTP_200_OK
+)
+async def call_by_kind_of_call(
+    kind_of_call: str, call_service: CallService = Depends(get_user_service)
+):
+    try:
+        call_data = await call_service.get_call_by_kind_of_call(
+            kind_of_call=kind_of_call
+        )
+        call_data_validate = [CallBaseResponse.model_validate(asdict(call)) for call in call_data]
+        print(call_data_validate)
+
+        return CallResponse(data = call_data_validate)
     except CallNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

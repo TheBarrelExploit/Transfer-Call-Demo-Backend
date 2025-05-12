@@ -38,8 +38,34 @@ class CallRepository(CallRepositoryDomain):
         return data
 
     async def find_call_by_dialed_number(self, dialed_number: str) -> List[CallBase]:
-        cursor_call_dialed = self.collection.find({"originational_number": dialed_number})
+        cursor_call_dialed = self.collection.find(
+            {"originational_number": dialed_number}
+        )
         data = []
         async for mongo_data in cursor_call_dialed:
             data.append(CallBase.from_mongo(mongo_data))
         return data
+
+    async def find_call_by_class_call(self, class_call: str) -> List[CallBase]:
+        cursor_call_class_call = self.collection.find({"class_call": class_call})
+        data = []
+        async for mongo_data in cursor_call_class_call:
+            data.append(CallBase.from_mongo(mongo_data))
+        return data
+
+    async def find_call_by_kind_of_call(self, kind_of_call: str) -> List[CallBase]:
+        cursor_call_kind_of_call = self.collection.find({"kind_of_call": kind_of_call})
+        data = []
+        async for mongo_data in cursor_call_kind_of_call:
+            data.append(CallBase.from_mongo(mongo_data))
+        return data
+
+    async def find_call_by_type_of_call(self, type_of_call: str) -> List[CallBase]:
+        cursor_call_type_of_call = self.collection.find({"type_of_call": type_of_call})
+        data = []
+        async for mongo_data in cursor_call_type_of_call:
+            data.append(CallBase.from_mongo(mongo_data))
+        return data
+    
+    async def find_call_by_filter(self, data):
+        return await super().find_call_by_filter(data)

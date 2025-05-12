@@ -487,7 +487,7 @@ async def auth_callback(
         auth_result = await auth_service.process_auth_code(code)
         print(auth_result["token"])
         return RedirectResponse(
-            url=f"http://localhost:5500/Transfer-Call-Demo/Transfer-Call-Demo-FrontEnd/html/callback.html?token={auth_result['token']}"
+            url=f"http://localhost:5500/html/callback.html?token={auth_result['token']}"
         )
 
     except Exception as e:

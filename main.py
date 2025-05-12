@@ -3,11 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.shared.config import get_settings
 from src.shared.database.mongodb import MongoDB
+from src.shared.apscheduler.apscheduler_config import SchedulerConfig
 from contextlib import asynccontextmanager
 from src.users.interfaces.web.v1.routers import router as users_router_v1
 from src.auth.interfaces.web.v1.routers import router as auth_router_v1
 from src.tarificador.interfaces.web.v1.routers import router as call_router_v1
 from src.auth.infrastructure.security import get_password_hash
+from pymongo import MongoClient
 from dataclasses import asdict
 from src.users.domain.models import UserBase, MFAConfig
 from datetime import datetime, timezone
@@ -23,9 +25,15 @@ async def lifespan(app: FastAPI):
     Connect to MongoDB and close the connection when the app stops.
     """
     # Connect to MongoDB
+    sync_mongo_client = MongoClient(settings.MONGO_URI, maxPoolSize=10)
     mongo = MongoDB()
-    app.state.mongo = mongo
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
+
+    apscheduler = SchedulerConfig(mongo_client=sync_mongo_client, mongo_database=settings.MONGO_DB)
+    apscheduler.start()
+
+    app.state.mongo = mongo
+    app.state.scheduler = apscheduler
 
     # Crear usuario de prueba si no existe
     users_col = mongo.get_collection("users")
@@ -55,6 +63,7 @@ async def lifespan(app: FastAPI):
 
     # Close MongoDB connection
     await mongo.close()
+    apscheduler.shutdowm()
 
 
 app = FastAPI(

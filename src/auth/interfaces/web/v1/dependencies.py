@@ -159,7 +159,7 @@ async def get_current_user_sso(
     except JWTError:
         raise credentials_exception
 
-    user = await user_repo.find_by_id(sub)
+    user = await user_repo.find_by_id(payload.get("id"))
     if user is None:
         raise credentials_exception
 
