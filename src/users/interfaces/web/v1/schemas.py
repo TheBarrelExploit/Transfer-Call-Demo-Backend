@@ -73,8 +73,8 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     entity: str
-    microsoft_id_account: Optional[str] = None
-    roles: List[str]
+    #microsoft_id_account: Optional[str] = None
+    role: List[str] = Field(alias="roles")
     mfa: MFAConfigSchema
     created_at: datetime
     logo: Optional[str] = None
