@@ -11,7 +11,12 @@ class UserRepository(ABC):
 
     @abstractmethod
     async def find_by_id_microsoft(self, id: str) -> Optional[UserBase]:
-        "Find a user by their ID microsoft"
+        """Find a user by their ID microsoft"""
+        pass
+
+    @abstractmethod
+    async def find_by_username(self, username:str) -> Optional[UserBase]:
+        """Find a user by their username"""
         pass
 
     @abstractmethod

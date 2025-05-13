@@ -1,7 +1,6 @@
 from fastapi import Request, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from typing import Annotated
-from src.tarificador.domain.ports import CallRepositoryDomain
 from src.tarificador.infrastructure.repository import CallRepository
 from src.shared.database.mongodb import MongoDB
 from src.tarificador.application.services import CallService
