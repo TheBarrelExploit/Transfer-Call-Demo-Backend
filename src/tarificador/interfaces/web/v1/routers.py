@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Security
 from dataclasses import asdict
 from typing import Optional, Dict,Tuple ,Any
 from src.users.domain.models import UserBase
@@ -7,7 +7,6 @@ from src.tarificador.application.exception import CallNotFoundException
 from src.tarificador.infrastructure.dependencies import get_user_service, get_current_payload
 from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
-from fastapi import Security
 
 router = APIRouter(prefix="/v1/calls", tags=["calls"])
 security = HTTPBearer()
