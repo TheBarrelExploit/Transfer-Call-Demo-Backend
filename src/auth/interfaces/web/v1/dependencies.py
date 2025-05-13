@@ -123,7 +123,7 @@ async def get_current_user(
         if user is None:
             raise credentials_exception
 
-        return user, payload
+        return user
     except JWTError:
         raise credentials_exception
     except Exception as e:
