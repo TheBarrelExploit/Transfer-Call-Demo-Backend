@@ -49,7 +49,7 @@ class MFATokenRequest(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    access_token: str
+    token: str
     token_type: str
 
 
@@ -171,7 +171,7 @@ async def enable_mfa(
 
         return {
             "verified": True,
-            "access_token": await auth_service.create_access_token(
+            "token": await auth_service.create_access_token(
                 user, mfa_verified=True
             ),
             "token_type": "bearer",
@@ -225,13 +225,13 @@ async def verify_mfa(
         )
 
         # Generar token
-        access_token = await auth_service.create_access_token(user, mfa_verified=True)
+        token = await auth_service.create_access_token(user, mfa_verified=True)
 
         return MFAVerifyResponse(
             verified=True,
             message="Verificación MFA exitosa",
             is_initial_setup=False,
-            access_token=access_token,
+            token=token,
             token_type="bearer",
             username=user.username,
         )
@@ -294,10 +294,10 @@ async def login_for_access_token(
             )
 
         # 4. Usuario sin MFA - token directo
-        access_token = await auth_service.create_access_token(
+        token = await auth_service.create_access_token(
             user, mfa_verified=not mfa_configured
         )
-        return TokenResponse(access_token=access_token, token_type="bearer")
+        return TokenResponse(token=token, token_type="bearer")
 
     except Exception as e:
         logger.error(f"Error en login: {str(e)}", exc_info=True)
@@ -311,7 +311,8 @@ async def login_for_access_token(
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service),
-):
+):  
+    print("print de login: " + form_data.username, form_data.password)
     user = await auth_service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=401, 
@@ -320,7 +321,7 @@ async def login(
     
     
     # Generar token de acceso
-    access_token = await auth_service.create_access_token(user)
+    token = await auth_service.create_access_token(user)
     
     # Convertir usuario a UserResponse
     user_dict = asdict(user)
@@ -328,7 +329,7 @@ async def login(
     
     # Preparar respuesta
     response_data = {
-        "access_token": access_token,
+        "token": token,
         "token_type": "bearer",
         "user": user_response.model_dump()
     }
@@ -336,8 +337,6 @@ async def login(
 
 
 # Mantener endpoints de debug para propósitos de desarrollo
-
-
 @router.get("/mfa/debug-secret")
 async def debug_secret(secret: str):
     """Endpoint de debug mejorado"""
