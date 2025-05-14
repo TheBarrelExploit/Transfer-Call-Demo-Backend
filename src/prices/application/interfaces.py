@@ -13,6 +13,10 @@ class PricesInterfaces(ABC):
         pass
 
     @abstractmethod
+    async def create_price(self, data: Dict[str, Any]) -> PriceBase:
+        pass
+
+    @abstractmethod
     async def get_by_all_history_price(
         self, page: int, per_page: int
     ) -> Tuple[List[PriceHistory], int]:

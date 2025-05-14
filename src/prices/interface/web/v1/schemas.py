@@ -7,6 +7,7 @@ class PriceRequest(BaseModel):
     call_type: str
     rate_per_minute: int
     divisa: str
+    created_by: str 
 
 
 class PriceRequestUpdate(BaseModel):
@@ -26,10 +27,10 @@ class PriceResponse(BaseModel):
     rate_per_minute: int
     divisa: str
     valid_from: datetime
-    valid_to: Optional[datetime]
     is_active: bool
     created_by: str
     created_at: datetime
+    valid_until: Optional[datetime] = None
 
 
 class PricePaginate(BaseModel):
@@ -50,8 +51,9 @@ class PriceHistoryResponse(BaseModel):
 
 class PriceResponseList(BaseModel):
     data: List[PriceResponse]
+    pagination: PricePaginate
 
 
 class PriceHistoryList(BaseModel):
     data: List[PriceHistoryResponse]
-    pagination: Dict[PricePaginate]
+    pagination: PricePaginate

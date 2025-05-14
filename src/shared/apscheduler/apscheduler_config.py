@@ -1,6 +1,6 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
-from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.executors.asyncio import AsyncIOExecutor
 from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.collection import Collection
@@ -25,7 +25,7 @@ class SchedulerConfig:
                     client=self.mongo_client,
                 )
             },
-            executor={"default": ThreadPoolExecutor(20)},
+            executor={"default": AsyncIOExecutor()},
             job_defaults={"coalesce": False, "max_instances": 3},
             timezone=pytz.utc,
         )

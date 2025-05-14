@@ -5,7 +5,7 @@ from ..domain.models import PriceBase, PriceHistory
 
 class PricesRepositoryDomain(ABC):
     @abstractmethod
-    async def find_by_all_prices(self) -> List[PriceBase]:
+    async def find_by_all_prices(self, page:int, per_page) -> Tuple[List[PriceBase], int]:
         pass
 
     @abstractmethod

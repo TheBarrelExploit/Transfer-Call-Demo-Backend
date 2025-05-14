@@ -3,9 +3,8 @@ from dataclasses import asdict
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.ports import PricesRepositoryDomain
 from ..domain.models import PriceBase, PriceHistory
-from datetime import datetime, timezone
 from src.shared.apscheduler.apscheduler_config import SchedulerConfig
-
+from src.shared.apscheduler.tarea_precios import execute_price_change
 
 class PriceRepository(PricesRepositoryDomain):
     def __init__(
@@ -18,12 +17,15 @@ class PriceRepository(PricesRepositoryDomain):
         self.collection_history = collection_history
         self.scheduler = scheduler
 
-    async def find_by_all_prices(self) -> List[PriceBase]:
-        price = await self.collection.find({"is_valid": True})
+    async def find_by_all_prices(self, page:int, per_page:int) -> Tuple[List[PriceBase], int]:
+        skip = (page - 1) * per_page
+        price = self.collection.find({}).skip(skip=skip).limit(per_page)
         data = []
         async for mongo_data in price:
             data.append(PriceBase.from_mongo(mongo_data))
-        return data
+        
+        total = await self.collection.count_documents({})
+        return data, total
 
     async def find_by_all_prices_history(
         self, page: int, per_page: int
@@ -31,7 +33,7 @@ class PriceRepository(PricesRepositoryDomain):
         skip = (page - 1) * per_page
 
         price_history = (
-            await self.collection_history.find({}).skip(skip=skip).limit(limit=per_page)
+            self.collection_history.find({}).skip(skip=skip).limit(limit=per_page)
         )
         data = []
         async for mongo_data in price_history:
@@ -43,16 +45,17 @@ class PriceRepository(PricesRepositoryDomain):
 
     async def find_by_call_type(self, call_type: str) -> PriceBase:
         price = await self.collection.find_one(
-            {"call_type": call_type, "is_valid": True}
+            {"call_type": call_type, "is_active": True}
         )
         return PriceBase.from_mongo(price)
 
     async def create_prices(self, price: PriceBase) -> PriceBase:
         data = asdict(price)
+        data.pop("_id", None)
 
         result = await self.collection.insert_one(data)
 
-        price.id = str(result.inserted_id)
+        price._id = str(result.inserted_id)
 
         return price
 
@@ -71,48 +74,13 @@ class PriceRepository(PricesRepositoryDomain):
             {"_id": job_id, **price, "status": "pending"}
         )
         self.scheduler.scheduler.add_job(
-            self.execute_price_change,
+            "src.shared.apscheduler.tarea_precios:execute_price_change",
             "date",
             run_date=price["update_date"],
-            args=[job_id],
             id=job_id,
+            kwargs={"job_id": job_id} 
         )
         return {"status": f"Cambio progamado para el dia {price['update_date']}"}
+    
 
-    async def execute_price_change(self, job_id: str):
-        bulk_data = self.scheduler.prices_changes.find_one({"_id": job_id})
 
-        async for change in bulk_data["change"]:
-            try:
-                self.update_single_price(
-                    call_type=change["call_type"],
-                    new_rate=change["rate_per_minute"],
-                    divisa=change["divisa"],
-                    user=bulk_data["user"],
-                )
-            except Exception as e:
-                print(f"Error actualizando el {change['call_type']}: {str(e)}")
-
-        self.scheduler.prices_changes.update_one(
-            {"_id": job_id}, {"$set": {"status": "completed"}}
-        )
-
-    async def update_single_price(
-        self, call_type: str, new_rate: int, divisa: str, user: str
-    ):
-        current_price = await self.collection.find_one({"call_type": call_type})
-
-        await self.collection_history.insert_one(
-            {**current_price, "valid_to": datetime.now(timezone.utc)}
-        )
-
-        await self.collection.update_one(
-            {"call_type": call_type},
-            {
-                "$set": {
-                    "rate_per_minute": new_rate,
-                    "divisa": divisa,
-                    "valid_from": datetime.now(timezone.utc),
-                }
-            },
-        )

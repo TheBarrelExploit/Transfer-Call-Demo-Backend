@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from bson import ObjectId
 from typing import Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -9,11 +9,11 @@ class PriceBase:
     call_type: str
     rate_per_minute: int
     divisa: str
-    valid_from: datetime
-    valid_to: Optional[datetime]
-    is_active: bool
-    created_by: str
-    created_at: datetime
+    created_by: str 
+    valid_from: datetime = datetime.now(timezone.utc)
+    valid_until: Optional[datetime] = None
+    created_at: datetime = datetime.now(timezone.utc)
+    is_active: bool = True
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)
 
     @property

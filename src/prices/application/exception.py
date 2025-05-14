@@ -4,3 +4,6 @@ class PriceNotFoundException(Exception):
 
 class PriceNotSchedulerException(Exception):
     pass
+
+class PriceNotCreateException(Exception):
+    pass

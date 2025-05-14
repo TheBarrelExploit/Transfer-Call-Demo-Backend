@@ -14,35 +14,43 @@ from src.prices.application.exception import PriceNotFoundException
 from src.prices.application.services import PriceService
 
 
-router = APIRouter(prefix="/v1/prices", tags=["calls"])
+router = APIRouter(prefix="/v1/prices", tags=["prices"])
 
 
 @router.get(
     "/prices_all", response_model=PriceResponseList, status_code=status.HTTP_200_OK
 )
 async def prices_all(
+    page: int = Query(1, ge=1, description="Numero de página"),
+    per_page: int = Query(10, le=100, description="Items por página"),
     prices_services: PriceService = Depends(get_service_price),
 ) -> PriceResponseList:
-    prices_all = await prices_services.get_by_all_price()
+    prices_all, total = await prices_services.get_by_all_price(page=page, per_pages=per_page)
     prices_all_validate = [
         PriceResponse.model_validate(asdict(prices)) for prices in prices_all
     ]
 
-    return PriceResponseList(data=prices_all_validate)
+    total_pages = (total + per_page - 1) // per_page
+    pagination = {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+    }
+
+    return PriceResponseList(data=prices_all_validate, pagination= pagination)
 
 
 @router.get(
-    "/prices_by", response_model=PriceResponseList, status_code=status.HTTP_200_OK
+    "/prices_by", response_model=PriceResponse, status_code=status.HTTP_200_OK
 )
 async def price_by(
-    class_price: str, prices_services: PriceService = Depends(get_service_price)
+    class_price: str,
+    prices_services: PriceService = Depends(get_service_price)
 ) -> PriceResponseList:
     prices_by = await prices_services.get_by_price(class_call=class_price)
-    prices_by_validate = [
-        PriceResponse.model_validate(asdict(prices)) for prices in prices_by
-    ]
 
-    return PriceResponseList(data=prices_by_validate)
+    return PriceResponse.model_validate(asdict(prices_by))
 
 
 @router.get(
@@ -68,7 +76,7 @@ async def history_all(
         "total": total,
         "page": page,
         "per_page": per_page,
-        "total_page": total_pages,
+        "total_pages": total_pages,
     }
 
     return PriceHistoryList(data=prices_history_all_validate, pagination=pagination)
@@ -80,9 +88,19 @@ async def history_all(
     status_code=status.HTTP_200_OK,
 )
 async def history_by(
-    class_price: str, prices_service: PriceService = Depends(get_service_price)
+    class_price: str, 
+    prices_service: PriceService = Depends(get_service_price),
+    page: int = Query(1, ge=1, description="Numero de página"),
+    per_page: int = Query(10, le=100, description="Items por página"),
 ) -> PriceHistoryResponse:
-    price_history_by = await prices_service.get_by_history_price(class_call=class_price)
+    price_history_by, total = await prices_service.get_by_history_price(class_call=class_price)
+    total_pages = (total + per_page - 1) // per_page
+    pagination = {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_page": total_pages,
+    }
     return PriceHistoryResponse(asdict(price_history_by))
 
 
@@ -98,6 +116,21 @@ async def price_update(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No se encontro información"
         )
 
-    price_response = prices_service.update_prices(price_data_validate)
+    price_response = await prices_service.update_prices(price_data_validate)
 
     return price_response
+
+@router.post("/price_create", response_model=PriceResponse, status_code=status.HTTP_200_OK)
+async def create_price(
+   price_data: PriceRequest,
+   price_service: PriceService = Depends(get_service_price)
+):
+    price_data_validate = price_data.model_dump()
+
+    if not price_data_validate:
+        raise HTTPException(
+            status_code = status.HTTP_400_BAD_REQUEST, detail = "No se encontro información"
+        )
+    price_response = await price_service.create_price(price_data_validate)
+
+    return PriceResponse.model_validate(asdict(price_response))

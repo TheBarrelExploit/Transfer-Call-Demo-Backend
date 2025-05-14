@@ -1,17 +1,17 @@
 from ..application.interfaces import PricesInterfaces
-from ..application.exception import PriceNotFoundException, PriceNotSchedulerException
+from ..application.exception import PriceNotFoundException, PriceNotSchedulerException, PriceNotCreateException
 from ..domain.models import PriceBase, PriceHistory
 from ..domain.ports import PricesRepositoryDomain
 from typing import Dict, Any, Tuple, List
-from datetime import datetime
+
 
 
 class PriceService(PricesInterfaces):
     def __init__(self, price: PricesRepositoryDomain):
         self.price = price
 
-    async def get_by_all_price(self):
-        price = await self.price.find_by_all_prices()
+    async def get_by_all_price(self, page:int , per_pages:int) -> Tuple[PriceBase, int]:
+        price = await self.price.find_by_all_prices(page=page, per_page=per_pages)
 
         if len(price) == 0:
             raise PriceNotFoundException("Prices Not Found")
@@ -44,3 +44,15 @@ class PriceService(PricesInterfaces):
         if not price_response:
             raise PriceNotSchedulerException("Scheduler no program")
         return price_response
+    
+    async def create_price(self, data:Dict[str, Any]) -> PriceBase:    
+        data = PriceBase(**data)
+        prices = await self.price.create_prices(data)
+
+        if not prices:
+            raise PriceNotCreateException("Not created")
+        
+        return prices
+
+        
+        
