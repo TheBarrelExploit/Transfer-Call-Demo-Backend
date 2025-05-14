@@ -202,13 +202,15 @@ async def enable_mfa(
 
 @router.post("/mfa/verify", response_model=MFAVerifyResponse)
 async def verify_mfa(
-    username: str = Form(...),
-    code: str = Form(...),
+    reque:MFAVerifyRequest,
+    #username: str = Form(...),
+    #code: str = Form(...),
     auth_service: AuthService = Depends(get_auth_service),
 ):
     """Verificación estándar de código MFA para login"""
     try:
-        user = await auth_service.user_repository.find_by_username(username)
+        reque = reque.model_dump()
+        user = await auth_service.user_repository.find_by_username(reque["username"])
         if not user or not user.mfa or not user.mfa.secret:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -216,14 +218,14 @@ async def verify_mfa(
             )
 
         # Verificar código
-        if not await auth_service.verify_mfa_login(username, code):
+        if not await auth_service.verify_mfa_login(reque["username"],reque["code"]):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Código MFA inválido"
             )
 
         # Actualizar último uso
         await auth_service.user_repository.update_user_mfa(
-            username=username,
+            username=reque["username"],
             mfa_config=MFAConfig(
                 secret=user.mfa.secret,
                 enabled=True,
