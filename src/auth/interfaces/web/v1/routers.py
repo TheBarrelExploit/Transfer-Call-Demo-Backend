@@ -1,5 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Form, Security, BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Query,
+    Request,
+    Form,
+    Security,
+    BackgroundTasks,
+)
+from fastapi.security import (
+    OAuth2PasswordRequestForm,
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi import UploadFile, File
 from src.auth.infrastructure.security import oauth2_scheme, invalidate_token
@@ -12,7 +26,13 @@ from src.users.interfaces.web.v1.schemas import UserResponse
 from src.users.domain.ports import UserRepository
 from src.shared.email import send_email_background, EmailSchema
 from .schemas import Token
-from .dependencies import get_auth_service, get_current_user, get_current_user_sso, get_mfa_service, get_user_repository
+from .dependencies import (
+    get_auth_service,
+    get_current_user,
+    get_current_user_sso,
+    get_mfa_service,
+    get_user_repository,
+)
 from dataclasses import asdict
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -27,6 +47,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 security = HTTPBearer()
+
 
 class MFAVerifyResponse(BaseModel):
     verified: bool
@@ -171,9 +192,7 @@ async def enable_mfa(
 
         return {
             "verified": True,
-            "token": await auth_service.create_access_token(
-                user, mfa_verified=True
-            ),
+            "token": await auth_service.create_access_token(user, mfa_verified=True),
             "token_type": "bearer",
         }
 
@@ -311,27 +330,24 @@ async def login_for_access_token(
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service),
-):  
+):
     print("print de login: " + form_data.username, form_data.password)
     user = await auth_service.authenticate_user(form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, 
-                            detail="Credenciales inválidas")
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    
-    
     # Generar token de acceso
     token = await auth_service.create_access_token(user)
-    
+
     # Convertir usuario a UserResponse
     user_dict = asdict(user)
     user_response = UserResponse.model_validate(user_dict)
-    
+
     # Preparar respuesta
     response_data = {
         "token": token,
         "token_type": "bearer",
-        "user": user_response.model_dump()
+        "user": user_response.model_dump(),
     }
     return response_data
 
@@ -520,36 +536,37 @@ async def protected_route(user: UserBase = Depends(get_current_user)):
     return {"message": f"Hola {user.username}, estas autenticado!"}
 
 
-#ENVIO DE REPORTE VIA EMAIL
+# ENVIO DE REPORTE VIA EMAIL
 security = HTTPBearer()
+
 
 @router.post("/send-report-email")
 async def send_report_email_endpoint(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     credentials: HTTPAuthorizationCredentials = Security(security),
-    user_repo: UserRepository = Depends(get_user_repository)
+    user_repo: UserRepository = Depends(get_user_repository),
 ):
     try:
-        
         # Obtener el token de manera más robusta
         token = credentials.credentials
         if not token or token == "undefined":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token de autorización no proporcionado"
+                detail="Token de autorización no proporcionado",
             )
 
         # Obtener usuario actual
         current_user = await get_current_user(token, user_repo)
-        logger.info(f"Usuario obtenido: {current_user.username}, Email: {current_user.email}")
+        logger.info(
+            f"Usuario obtenido: {current_user.username}, Email: {current_user.email}"
+        )
 
         # Verificar que el usuario tenga email
         if not current_user.email:
             logger.error("El usuario no tiene email registrado")
             raise HTTPException(
-                status_code=400,
-                detail="El usuario no tiene un email registrado"
+                status_code=400, detail="El usuario no tiene un email registrado"
             )
 
         # Crear archivo temporal
@@ -558,7 +575,7 @@ async def send_report_email_endpoint(
             if len(content) > 5 * 1024 * 1024:  # 5MB max
                 raise HTTPException(
                     status_code=400,
-                    detail="El archivo es demasiado grande (máximo 5MB)"
+                    detail="El archivo es demasiado grande (máximo 5MB)",
                 )
             temp_file.write(content)
             temp_file_path = temp_file.name
@@ -572,23 +589,25 @@ async def send_report_email_endpoint(
                 <h2>Reporte de Llamadas</h2>
                 <p>Hola {current_user.username},</p>
                 <p>Adjunto encontrarás el reporte que solicitaste.</p>
-                <p>Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                <p>Fecha de generación: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
                 <p>Saludos,<br>El equipo de soporte</p>
                 """,
-                attachments=[{
-                    "file": temp_file_path,
-                    "filename": file.filename or "reporte-llamadas.pdf",
-                    "subtype": "pdf"
-                }]
+                attachments=[
+                    {
+                        "file": temp_file_path,
+                        "filename": file.filename or "reporte-llamadas.pdf",
+                        "subtype": "pdf",
+                    }
+                ],
             )
             print(file.filename)
 
             await send_email_background(background_tasks, email_data)
-            
+
             return {
                 "status": "success",
                 "message": f"Reporte enviado a {current_user.email}",
-                "email": current_user.email
+                "email": current_user.email,
             }
         finally:
             if os.path.exists(temp_file_path):
@@ -599,6 +618,5 @@ async def send_report_email_endpoint(
     except Exception as e:
         logger.error(f"Error al enviar reporte: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail="Error interno al procesar la solicitud"
+            status_code=500, detail="Error interno al procesar la solicitud"
         )

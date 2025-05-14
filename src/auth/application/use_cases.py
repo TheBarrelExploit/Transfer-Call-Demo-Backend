@@ -73,7 +73,7 @@ class MicrosoftAuthService(AuthServiceSSO):
 
     async def create_access_token(self, user: UserBase):
         payload = {
-            "id":str(user.id),
+            "id": str(user.id),
             "sub": str(user.username),
             "email": user.email,
             "roles": user.roles,

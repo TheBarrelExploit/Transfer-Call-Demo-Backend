@@ -15,7 +15,7 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_username(self, username:str) -> Optional[UserBase]:
+    async def find_by_username(self, username: str) -> Optional[UserBase]:
         """Find a user by their username"""
         pass
 

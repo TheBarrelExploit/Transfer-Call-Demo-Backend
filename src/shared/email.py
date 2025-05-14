@@ -9,11 +9,13 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+
 class EmailSchema(BaseModel):
     email_to: List[EmailStr]  # Destinatario(s)
     subject: str
     body: str
     attachments: Optional[List[Dict[str, Any]]] = None
+
 
 # Cuenta con Configuración que asegura compatibilidad con Gmail
 conf = ConnectionConfig(
@@ -26,10 +28,10 @@ conf = ConnectionConfig(
     MAIL_STARTTLS=settings.MAIL_STARTTLS,
     MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
     USE_CREDENTIALS=settings.MAIL_USE_CREDENTIALS,
-    #VALIDATE_CERTS=settings.MAIL_VALIDATE_CERTS,
-    #TEMPLATE_FOLDER=None,
-    #SUPPRESS_SEND=0,
-    #TIMEOUT=10  # Aumenta el timeout si es necesario
+    # VALIDATE_CERTS=settings.MAIL_VALIDATE_CERTS,
+    # TEMPLATE_FOLDER=None,
+    # SUPPRESS_SEND=0,
+    # TIMEOUT=10  # Aumenta el timeout si es necesario
 )
 
 
@@ -44,8 +46,8 @@ async def send_email_background(background_tasks: BackgroundTasks, email: EmailS
         )
         fm = FastMail(conf)
         background_tasks.add_task(fm.send_message, message)
-        
-        #await fm.send_message(message)
+
+        # await fm.send_message(message)
         logger.info(f"Email enviado exitosamente a {email.email_to}")
     except Exception as e:
         logger.error(f"Error al enviar email: {str(e)}")

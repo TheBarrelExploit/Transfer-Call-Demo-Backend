@@ -49,20 +49,23 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if "id" not in to_encode:
         raise ValueError("El payload del token debe incluir el 'id' del usuario")
-    
+
     if "sub" not in to_encode:
         to_encode["sub"] = to_encode.get("username", "")
-        
+
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.JWT_EXPIRATION)
     )
     to_encode.update({"exp": expire})
-    
-    try: 
-        return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+    try:
+        return jwt.encode(
+            to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
+        )
     except Exception as e:
-        logger.error(f"Error creating acces token:  {str(e)}" )
+        logger.error(f"Error creating acces token:  {str(e)}")
         raise
+
 
 def verify_code(secret: str, code: str) -> bool:
     """Verificación robusta con ventana de tiempo ampliada"""
@@ -81,18 +84,16 @@ def verify_token(token: str):
         if is_token_blacklisted(token):
             logger.warning("this token is blacklisted")
             return None
-        
+
         payload = jwt.decode(
-            token, 
-            settings.JWT_SECRET, 
-            algorithms=[settings.JWT_ALGORITHM]
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
-        
-        #validacion adicional para el payload, por si no esta ni id ni username
-        if "id" not in payload and "sub "not in payload:
+
+        # validacion adicional para el payload, por si no esta ni id ni username
+        if "id" not in payload and "sub " not in payload:
             logger.warning("Token no contiene identificador de usuario")
             return None
-        
+
         return payload
     except JWTError as e:
         logger.warning(f"Token inválido: {str(e)}")
@@ -103,7 +104,7 @@ def verify_token(token: str):
 
 
 def invalidate_token(token: str) -> None:
-    #Añade un token a la lista negra
+    # Añade un token a la lista negra
     try:
         if token not in blacklisted_tokens:
             blacklisted_tokens.add(token)
@@ -113,7 +114,7 @@ def invalidate_token(token: str) -> None:
 
 
 def is_token_blacklisted(token: str) -> bool:
-    #Verifica si un token está en la lista negra
+    # Verifica si un token está en la lista negra
     return token in blacklisted_tokens
 
 
@@ -125,5 +126,5 @@ def get_user_id_from_token(token: str) -> Optional[str]:
     payload = verify_token(token)
     if not payload:
         return None
-        
-    return payload.get('id') or payload.get('sub')
+
+    return payload.get("id") or payload.get("sub")

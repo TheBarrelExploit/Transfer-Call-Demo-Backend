@@ -30,7 +30,9 @@ async def lifespan(app: FastAPI):
     mongo = MongoDB()
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
 
-    apscheduler = SchedulerConfig(mongo_client=sync_mongo_client, mongo_database=settings.MONGO_DB)
+    apscheduler = SchedulerConfig(
+        mongo_client=sync_mongo_client, mongo_database_name=settings.MONGO_DB
+    )
     apscheduler.start()
 
     app.state.mongo = mongo
@@ -65,6 +67,7 @@ async def lifespan(app: FastAPI):
     # Close MongoDB connection
     await mongo.close()
     apscheduler.shutdowm()
+    sync_mongo_client.close()
 
 
 app = FastAPI(

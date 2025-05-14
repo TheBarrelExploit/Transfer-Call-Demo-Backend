@@ -25,10 +25,10 @@ class AuthProvider(str, Enum):
 
 
 class MFAConfigSchema(BaseModel):
-    #secret: Optional[str] = None
+    # secret: Optional[str] = None
     enabled: bool = False
-    #backup_codes: List[str] = []
-    #last_used_at: Optional[datetime] = None
+    # backup_codes: List[str] = []
+    # last_used_at: Optional[datetime] = None
 
 
 class UserCreateRequest(BaseModel):
@@ -73,7 +73,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     entity: str
-    #microsoft_id_account: Optional[str] = None
+    # microsoft_id_account: Optional[str] = None
     role: List[str] = Field(alias="roles")
     mfa: MFAConfigSchema
     created_at: datetime

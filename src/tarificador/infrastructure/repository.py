@@ -66,6 +66,6 @@ class CallRepository(CallRepositoryDomain):
         async for mongo_data in cursor_call_type_of_call:
             data.append(CallBase.from_mongo(mongo_data))
         return data
-    
+
     async def find_call_by_filter(self, data):
         return await super().find_call_by_filter(data)

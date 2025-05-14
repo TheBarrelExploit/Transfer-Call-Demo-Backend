@@ -45,9 +45,8 @@ class MongoDB:
                 raise
         else:
             logger.warning("MongoDB already connected")
-    
-    def get_client(self) ->AsyncIOMotorClient:
 
+    def get_client(self) -> AsyncIOMotorClient:
         if self._client is None:
             raise ConnectionError("MongoDB Not client")
         return self._client

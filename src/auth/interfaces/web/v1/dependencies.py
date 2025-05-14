@@ -89,8 +89,7 @@ async def get_current_user(
 ) -> UserBase:
     if token == "undefined":
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token no proporcionado"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token no proporcionado"
         )
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -110,7 +109,7 @@ async def get_current_user(
 
         # Primero intentamos obtener el ID del usuario
         user_id: str = payload.get("id")
-        
+
         # Si no hay ID, fallamos al username (para retrocompatibilidad)
         if user_id:
             user = await user_repo.find_by_id(user_id)
@@ -119,7 +118,7 @@ async def get_current_user(
             if username is None:
                 raise credentials_exception
             user = await user_repo.find_by_username(username)
-            
+
         if user is None:
             raise credentials_exception
 
@@ -130,8 +129,9 @@ async def get_current_user(
         logger.error(f"Error en get_current_user: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno del servidor al validar usuario"
+            detail="Error interno del servidor al validar usuario",
         )
+
 
 async def get_current_user_sso(
     token: str = Depends(oauth2_scheme),
@@ -163,4 +163,4 @@ async def get_current_user_sso(
     if user is None:
         raise credentials_exception
 
-    return user 
+    return user

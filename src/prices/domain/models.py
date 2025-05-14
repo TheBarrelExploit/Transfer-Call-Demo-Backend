@@ -6,9 +6,9 @@ from datetime import datetime
 
 @dataclass
 class PriceBase:
-    call_type:str
-    rate_per_minute:int
-    divisa:str
+    call_type: str
+    rate_per_minute: int
+    divisa: str
     valid_from: datetime
     valid_to: Optional[datetime]
     is_active: bool
@@ -19,7 +19,7 @@ class PriceBase:
     @property
     def id(self) -> str:
         return str(self._id) if self._id else None
-    
+
     @classmethod
     def from_mongo(cls, data: dict[str, Any]):
         """Constructor que filtra _id correctamente"""
@@ -34,18 +34,19 @@ class PriceBase:
 
 @dataclass
 class PriceHistory:
-    action:str
-    call_type:str
+    action: str
+    call_type: str
     previous_rate: int
     new_rate: int
-    changed_by:str
-    changed_at:datetime
-    
+    changed_by: str
+    changed_at: datetime
+
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)
+
     @property
     def id(self) -> str:
         return str(self._id) if self._id else None
-    
+
     @classmethod
     def from_mongo(cls, data: dict[str, Any]):
         """Constructor que filtra _id correctamente"""
@@ -56,4 +57,3 @@ class PriceHistory:
         user = cls(**filtered_data)
         user._id = str(data["_id"])  # Asigna _id después de crear el objeto
         return user
-
