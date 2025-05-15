@@ -43,6 +43,9 @@ import pyotp
 import time
 import os
 
+from jinja2 import Template
+from pathlib import Path
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
@@ -511,6 +514,17 @@ async def send_report_email_endpoint(
     credentials: HTTPAuthorizationCredentials = Security(security),
     user_repo: UserRepository = Depends(get_user_repository),
 ):
+    # Ruta del template (ajustado con Path para mayor portabilidad)
+    template_path = Path(__file__).parent / ".." / "Transfer-Call-Demo-FrontEnd" / "html" / "template_email.html"
+    with open(template_path.resolve(), encoding="utf-8") as f:
+        template_str = f.read()
+
+    # Renderizar el contenido del HTML
+    template = Template(template_str)
+    rendered_body = template.render(
+        username=current_user.username,
+        date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
     try:
         # Obtener el token de manera más robusta
         token = credentials.credentials
@@ -549,20 +563,7 @@ async def send_report_email_endpoint(
             email_data = EmailSchema(
                 email_to=[current_user.email],
                 subject=f"Reporte de Llamadas - {datetime.now().strftime('%Y-%m-%d')}",
-                body=f"""
-                <h2>Reporte de Llamadas</h2>
-                <p>Hola {current_user.username},</p>
-                <p>Adjunto encontrarás el reporte que solicitaste.</p>
-                <p>Fecha de generación: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-                <p>Saludos,<br>El equipo de soporte</p>
-                """,
-                attachments=[
-                    {
-                        "file": temp_file_path,
-                        "filename": file.filename or "reporte-llamadas.pdf",
-                        "subtype": "pdf",
-                    }
-                ],
+                body=rendered_body,
             )
             print(file.filename)
 
