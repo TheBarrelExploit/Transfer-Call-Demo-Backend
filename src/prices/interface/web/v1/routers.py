@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from dataclasses import asdict
 from typing import Optional, Dict, Tuple, Any
 from ..v1.schemas import (
@@ -15,7 +17,7 @@ from src.prices.application.services import PriceService
 
 
 router = APIRouter(prefix="/v1/prices", tags=["prices"])
-
+security = HTTPBearer()
 
 @router.get(
     "/prices_all", response_model=PriceResponseList, status_code=status.HTTP_200_OK
@@ -24,6 +26,7 @@ async def prices_all(
     page: int = Query(1, ge=1, description="Numero de página"),
     per_page: int = Query(10, le=100, description="Items por página"),
     prices_services: PriceService = Depends(get_service_price),
+    credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> PriceResponseList:
     prices_all, total = await prices_services.get_by_all_price(page=page, per_pages=per_page)
     prices_all_validate = [
@@ -46,7 +49,8 @@ async def prices_all(
 )
 async def price_by(
     class_price: str,
-    prices_services: PriceService = Depends(get_service_price)
+    prices_services: PriceService = Depends(get_service_price),
+    credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> PriceResponseList:
     prices_by = await prices_services.get_by_price(class_call=class_price)
 
@@ -62,6 +66,7 @@ async def history_all(
     page: int = Query(1, ge=1, description="Numero de página"),
     per_page: int = Query(10, le=100, description="Items por página"),
     prices_services: PriceService = Depends(get_service_price),
+    credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> PriceHistoryList:
     prices_history_all, total = await prices_services.get_by_all_history_price(
         page=page, per_page=per_page
@@ -92,6 +97,7 @@ async def history_by(
     prices_service: PriceService = Depends(get_service_price),
     page: int = Query(1, ge=1, description="Numero de página"),
     per_page: int = Query(10, le=100, description="Items por página"),
+    credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> PriceHistoryResponse:
     price_history_by, total = await prices_service.get_by_history_price(class_call=class_price)
     total_pages = (total + per_page - 1) // per_page
@@ -108,6 +114,7 @@ async def history_by(
 async def price_update(
     price_data: PriceUpdate,
     prices_service: PriceService = Depends(get_service_price),
+    credentials: HTTPAuthorizationCredentials = Security(security)
 ):
     price_data_validate = price_data.model_dump()
 
@@ -123,7 +130,8 @@ async def price_update(
 @router.post("/price_create", response_model=PriceResponse, status_code=status.HTTP_200_OK)
 async def create_price(
    price_data: PriceRequest,
-   price_service: PriceService = Depends(get_service_price)
+   price_service: PriceService = Depends(get_service_price),
+   credentials: HTTPAuthorizationCredentials = Security(security)
 ):
     price_data_validate = price_data.model_dump()
 
