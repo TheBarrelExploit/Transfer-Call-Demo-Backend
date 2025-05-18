@@ -1,7 +1,7 @@
 from ..domain.ports import CallRepositoryDomain
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.models import CallBase
-from typing import Optional, List
+from typing import List, Dict, Any
 from datetime import datetime
 
 
@@ -67,5 +67,10 @@ class CallRepository(CallRepositoryDomain):
             data.append(CallBase.from_mongo(mongo_data))
         return data
 
-    async def find_call_by_filter(self, data):
-        return await super().find_call_by_filter(data)
+    async def find_call_by_filter(self, query:Dict[str, Any]) -> List[CallBase]:
+        cursor_call_by = self.collection.find(query)
+        data_result = []
+        async for mongo_data in cursor_call_by:
+            data_result.append(CallBase.from_mongo(mongo_data))
+        return data_result
+        

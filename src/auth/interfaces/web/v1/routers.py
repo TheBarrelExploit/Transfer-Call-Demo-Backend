@@ -22,7 +22,7 @@ from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.application.services import AuthService
 from src.auth.interfaces.web.v1.dependencies import get_auth_service_sso
 from src.users.domain.models import UserBase, MFAConfig
-from src.users.interfaces.web.v1.schemas import UserResponse
+from src.users.interfaces.web.v1.schemas import UserResponse, UserResponseSSO
 from src.users.domain.ports import UserRepository
 from src.shared.email import send_email_background, EmailSchema
 from .schemas import Token
@@ -481,13 +481,14 @@ async def auth_callback(
             detail=f"Error durante la autenticación: {str(e)}",
         )
 
-@router.get("/me")
+
+@router.get("/me", response_model=UserResponseSSO)
 async def info_users_sso(current_user: UserBase = Depends(get_current_user_sso)):
     try:
         user = current_user
         user = asdict(user)
-        print(user)
-        return UserResponse.model_validate(user)
+        user = UserResponse.model_validate(user)
+        return UserResponseSSO(user = user)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"error: {str(e)}"
@@ -515,16 +516,7 @@ async def send_report_email_endpoint(
     user_repo: UserRepository = Depends(get_user_repository),
 ):
     # Ruta del template (ajustado con Path para mayor portabilidad)
-    template_path = Path(__file__).parent / ".." / "Transfer-Call-Demo-FrontEnd" / "html" / "template_email.html"
-    with open(template_path.resolve(), encoding="utf-8") as f:
-        template_str = f.read()
 
-    # Renderizar el contenido del HTML
-    template = Template(template_str)
-    rendered_body = template.render(
-        username=current_user.username,
-        date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
     try:
         # Obtener el token de manera más robusta
         token = credentials.credentials
@@ -546,11 +538,23 @@ async def send_report_email_endpoint(
             raise HTTPException(
                 status_code=400, detail="El usuario no tiene un email registrado"
             )
+        
+        template_path = Path() / "src" /  "shared"/ "template"  / "template_email.html"
+        print(template_path)
+        with open(template_path.resolve(), encoding="utf-8") as f:
+            template_str = f.read()
+
+            # Renderizar el contenido del HTML
+        template = Template(template_str)
+        rendered_body = template.render(
+            username=current_user.username,
+            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
 
         # Crear archivo temporal
         with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
             content = await file.read()
-            if len(content) > 5 * 1024 * 1024:  # 5MB max
+            if len(content) > 10 * 1024 * 1024:  # 5MB max
                 raise HTTPException(
                     status_code=400,
                     detail="El archivo es demasiado grande (máximo 5MB)",
@@ -564,6 +568,14 @@ async def send_report_email_endpoint(
                 email_to=[current_user.email],
                 subject=f"Reporte de Llamadas - {datetime.now().strftime('%Y-%m-%d')}",
                 body=rendered_body,
+                attachments=[
+                    {
+                        "file": temp_file_path,
+                        "filename": file.filename or "reporte-llamadas.pdf",
+                        "subtype": "pdf",
+                    }
+                ]
+                
             )
             print(file.filename)
 

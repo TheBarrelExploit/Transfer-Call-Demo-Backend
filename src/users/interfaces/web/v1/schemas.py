@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, AliasPath
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List
@@ -74,10 +74,14 @@ class UserResponse(BaseModel):
     username: str
     entity: str
     # microsoft_id_account: Optional[str] = None
-    role: List[str] = Field(alias="roles")
+    role: List[str] = Field(validation_alias=AliasPath('roles'))
     mfa: MFAConfigSchema
     created_at: datetime
     logo: Optional[str] = None
     updated_at: Optional[datetime] = None
     auth_provider: AuthProvider
     complete_profile: bool
+
+class UserResponseSSO(BaseModel):
+    user:UserResponse
+

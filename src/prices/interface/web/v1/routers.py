@@ -26,7 +26,7 @@ async def prices_all(
     page: int = Query(1, ge=1, description="Numero de página"),
     per_page: int = Query(10, le=100, description="Items por página"),
     prices_services: PriceService = Depends(get_service_price),
-    credentials: HTTPAuthorizationCredentials = Security(security)
+    #credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> PriceResponseList:
     prices_all, total = await prices_services.get_by_all_price(page=page, per_pages=per_page)
     prices_all_validate = [
@@ -45,16 +45,24 @@ async def prices_all(
 
 
 @router.get(
-    "/prices_by", response_model=PriceResponse, status_code=status.HTTP_200_OK
+    "/prices_by", response_model=PriceResponseList, status_code=status.HTTP_200_OK
 )
 async def price_by(
     class_price: str,
-    prices_services: PriceService = Depends(get_service_price),
-    credentials: HTTPAuthorizationCredentials = Security(security)
+    prices_services: PriceService = Depends(get_service_price)
 ) -> PriceResponseList:
     prices_by = await prices_services.get_by_price(class_call=class_price)
+    prices_by = asdict(prices_by)
+    prices_by_validation = [PriceResponse.model_validate(prices_by)]
 
-    return PriceResponse.model_validate(asdict(prices_by))
+    pagination = {
+        "total": 0,
+        "page": 0,
+        "per_page": 0,
+        "total_pages": 0,
+    }
+
+    return PriceResponseList(data=prices_by_validation, pagination= pagination)
 
 
 @router.get(

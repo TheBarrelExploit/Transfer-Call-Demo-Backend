@@ -3,6 +3,15 @@ from typing import List
 from datetime import datetime
 
 
+class CallRequest(BaseModel):
+    start_date: datetime = None
+    end_date:datetime = None
+    originational_number: str = None
+    connected_number: str = None
+    type_of_call: List[str] = None
+    kind_of_call: List[str] = None
+    class_call: List[str] = None
+
 class CallBaseResponse(BaseModel):
     id: str = Field(alias="_id")
     originational_number: str

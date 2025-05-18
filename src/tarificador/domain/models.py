@@ -19,10 +19,10 @@ class CallClass(str, Enum):
         Mantiene compatibilidad con el código existente.
         """
         mapping = {
-            cls.LONG_DISTANCE_INTER: "Long distance inter",
+            cls.LONG_DISTANCE_INTER: "Larga distancia internacional",
             cls.LOCAL: "Local",
-            cls.LONG_DISTANCE_INTRA: "Long distance intra",
-            cls.INTERNATIONAL: "International",
+            cls.LONG_DISTANCE_INTRA: "Larga distancia nacional",
+            cls.INTERNATIONAL: "Internacional",
             cls.PREMIUM: "Premium",
         }
         return mapping.get(value, "Desconocido")

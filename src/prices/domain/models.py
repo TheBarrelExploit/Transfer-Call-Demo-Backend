@@ -1,7 +1,30 @@
 from dataclasses import dataclass, field
 from bson import ObjectId
+from enum import Enum
 from typing import Optional, Any
 from datetime import datetime, timezone
+
+class CallClass(str, Enum):
+    LONG_DISTANCE_INTER = "0"
+    LOCAL = "2"
+    LONG_DISTANCE_INTRA = "3"
+    INTERNATIONAL = "10"
+    PREMIUM = "15"
+
+    @classmethod
+    def get_name(cls, value: str) -> str:
+        """
+        Obtiene el nombre descriptivo a partir del valor del código.
+        Mantiene compatibilidad con el código existente.
+        """
+        mapping = {
+            cls.LONG_DISTANCE_INTER: "Larga distancia internacional",
+            cls.LOCAL: "Local",
+            cls.LONG_DISTANCE_INTRA: "Larga distancia nacional",
+            cls.INTERNATIONAL: "Internacional",
+            cls.PREMIUM: "Premium",
+        }
+        return mapping.get(value, "Desconocido")
 
 
 @dataclass
@@ -15,6 +38,10 @@ class PriceBase:
     created_at: datetime = datetime.now(timezone.utc)
     is_active: bool = True
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)
+
+    def __post_init__(self):
+        # Se calcula automaticamente al crear la instancia
+        self.call_type = CallClass.get_name(self.call_type)
 
     @property
     def id(self) -> str:

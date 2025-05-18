@@ -1,8 +1,10 @@
-from typing import List
+from typing import List, Dict, Any
+from datetime import datetime
 from ..domain.models import CallBase
 from ..domain.ports import CallRepositoryDomain
 from .interfaces import CallInterfaces
 from .exception import CallNotFoundException
+from ..interfaces.web.v1.schemas import CallRequest
 
 
 class CallService(CallInterfaces):
@@ -65,5 +67,31 @@ class CallService(CallInterfaces):
             raise CallNotFoundException("Not found calls register")
         return call
 
-    async def get_call_by_filter(self, data):
-        return await super().get_call_by_filter(data)
+    async def get_call_by_filter(self, data:CallRequest) -> List[CallBase]:
+            query = {}
+            # 1. Filtros de fecha (sobre start_date de la BD)
+            if data.start_date or data.end_date:
+                date_query = {}
+                if data.start_date:
+                    date_query["$gte"] = data.start_date   # Llamadas que iniciaron después de esta fecha
+                if data.end_date:
+                    date_query["$lte"] = data.end_date    # Llamadas que iniciaron antes de esta fecha
+                query["start_date"] = date_query
+
+            # 2. Campos de coincidencia exacta
+            exact_fields = ["originational_number", "connected_number"]
+            query.update({
+                field: value for field in exact_fields
+                if (value := getattr(data, field)) is not None
+            })
+
+            # 3. Campos con $in (para listas)
+            list_fields = ["type_of_call", "kind_of_call", "class_call"]
+            query.update({
+                field: {"$in": value} for field in list_fields
+                if (value := getattr(data, field))
+            })
+            
+            return await self.call_repository.find_call_by_filter(query)
+
+            
