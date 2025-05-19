@@ -34,7 +34,7 @@ class PriceService(PricesInterfaces):
     async def get_by_all_history_price(
         self, page: int, per_page: int
     ) -> Tuple[List[PriceHistory], int]:
-        price = await self.get_by_all_history_price()
+        price = await self.get_by_all_history_price(page=page, per_page=per_page)
         if len(price) == 0:
             raise PriceNotFoundException
         return price
