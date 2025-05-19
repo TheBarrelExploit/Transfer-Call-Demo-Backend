@@ -1,6 +1,6 @@
 from dataclasses import asdict
 from bson import ObjectId
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.models import UserBase, MFAConfig
@@ -39,16 +39,19 @@ class DBUserRepository(UserRepository):
         )
         return await self.find_by_id(id)
 
-    async def delete(self, id):
-        result = await self.collection.delete_one({"_id": ObjectId(id)})
+    async def delete(self, email):
+        result = await self.collection.delete_one({"email": email})
         return result.deleted_count > 0
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[UserBase]:
-        cursor = self.collection.find().skip(skip).limit(limit)
-        usuarios = []
-        async for documento in cursor:
-            usuarios.append(UserBase(documento))
-        return usuarios
+    async def list(self, page: int = 0, per_page: int = 10) -> Tuple[List[UserBase], int]:
+        skip =  0 if page <= 0 else (page - 1) * per_page
+        cursor = self.collection.find({}).skip(skip).limit(per_page)
+ 
+        usuarios = [UserBase.from_mongo(document) async for document in cursor]
+
+        total = await self.collection.count_documents({})
+        
+        return usuarios, total
 
     async def find_by_username(self, username: str) -> UserBase | None:
         user_data = await self.collection.find_one({"username": username})

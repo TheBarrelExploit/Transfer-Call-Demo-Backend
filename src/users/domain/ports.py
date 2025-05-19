@@ -40,5 +40,5 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def list(self, skip: int = 0, limit: int = 100) -> List[UserBase]:
+    async def list(self, page: int = 0, per_page: int = 100) -> List[UserBase]:
         pass

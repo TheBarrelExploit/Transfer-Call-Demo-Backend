@@ -1,9 +1,9 @@
 from dataclasses import asdict
-from fastapi import APIRouter, Depends, HTTPException, status
-from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
+from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest, UserResponseList
 from src.users.application.services import UserService
 from src.users.infrastructure.dependencies import get_user_service
-from src.users.application.exception import EmailAlreadyExistsException
+from src.users.application.exception import EmailAlreadyExistsException, UserNotFoundException
 
 
 router = APIRouter(prefix="/v1/users", tags=["users"])
@@ -49,3 +49,44 @@ async def update_user(
     update_user_dict = asdict(update_user)
     print(update_user_dict)
     return UserResponse.model_validate(update_user_dict)
+
+@router.get("/user_all", response_model= UserResponseList, status_code=status.HTTP_200_OK)
+async def get_user(
+    user_service: UserService = Depends(get_user_service),
+    page: int = Query(1, ge=1, description="Numero de página"),
+    per_page: int = Query(10, le=100, description="Items por página"),
+):
+    user_all, total = await user_service.list_users(page=page, per_page=per_page)
+
+
+    user_all_validate = [UserResponse.model_validate(asdict(user)) for user in user_all]
+
+    
+    total_pages = (total + per_page - 1) // per_page
+    pagination = {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+    }
+    return UserResponseList(data = user_all_validate , pagination= pagination)
+
+@router.delete("/delete_user/{user_email}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_email: str = Path(..., description="Email del usuario a eliminar"),
+    user_service: UserService = Depends(get_user_service)
+):
+    try:
+        print(f"user_email: {user_email}")
+
+        delete = await user_service.delete_user(email=user_email)
+
+        print(delete)
+        return
+    except UserNotFoundException as e:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    
+
+
+

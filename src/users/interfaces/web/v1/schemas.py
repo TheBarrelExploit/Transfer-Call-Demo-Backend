@@ -17,6 +17,12 @@ class PyObjectId(ObjectId):
         if not ObjectId.is_valid(v):
             raise ValueError("Invalid ObjectId")
         return ObjectId(v)
+    
+class UserPaginate(BaseModel):
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
 
 
 class AuthProvider(str, Enum):
@@ -84,4 +90,9 @@ class UserResponse(BaseModel):
 
 class UserResponseSSO(BaseModel):
     user:UserResponse
+
+class UserResponseList(BaseModel):
+    data:List[UserResponse]
+    pagination:UserPaginate
+    
 
