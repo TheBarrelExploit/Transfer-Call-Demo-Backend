@@ -92,7 +92,7 @@ class UserResponseSSO(BaseModel):
     user:UserResponse
 
 class UserResponseList(BaseModel):
-    data:List[UserResponse]
+    user:List[UserResponse]
     pagination:UserPaginate
     
 

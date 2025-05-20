@@ -93,12 +93,12 @@ class UserService(UserServiceUser):
 
         return await self.repository.update(id, updated_data)
 
-    async def delete_user(self, email: str) -> bool:
-        user = await self.repository.find_by_email(email)
+    async def delete_user(self, id: str) -> bool:
+        user = await self.repository.find_by_id(id)
         if not user:
-            raise UserNotFoundException(f"User with id {email} not found")
+            raise UserNotFoundException(f"User with id {id} not found")
 
-        return await self.repository.delete(email)
+        return await self.repository.delete(id)
 
     async def list_users(self, page: int = 0, per_page: int = 10) -> Tuple[List[UserBase], int]:
         return await self.repository.list(page, per_page)

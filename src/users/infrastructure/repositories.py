@@ -39,8 +39,8 @@ class DBUserRepository(UserRepository):
         )
         return await self.find_by_id(id)
 
-    async def delete(self, email):
-        result = await self.collection.delete_one({"email": email})
+    async def delete(self, id:str) -> None:
+        result = await self.collection.delete_one({"_id": ObjectId(id)})
         return result.deleted_count > 0
 
     async def list(self, page: int = 0, per_page: int = 10) -> Tuple[List[UserBase], int]:

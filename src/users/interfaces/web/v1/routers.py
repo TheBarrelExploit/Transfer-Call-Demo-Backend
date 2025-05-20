@@ -69,17 +69,17 @@ async def get_user(
         "per_page": per_page,
         "total_pages": total_pages,
     }
-    return UserResponseList(data = user_all_validate , pagination= pagination)
+    return UserResponseList(user = user_all_validate , pagination= pagination)
 
-@router.delete("/delete_user/{user_email}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/delete_user/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    user_email: str = Path(..., description="Email del usuario a eliminar"),
+    user_id: str = Path(..., description="id del usuario a eliminar"),
     user_service: UserService = Depends(get_user_service)
 ):
     try:
-        print(f"user_email: {user_email}")
+        print(f"user_email: {user_id}")
 
-        delete = await user_service.delete_user(email=user_email)
+        delete = await user_service.delete_user(id=user_id)
 
         print(delete)
         return
