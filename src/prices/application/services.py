@@ -1,6 +1,6 @@
 from ..application.interfaces import PricesInterfaces
 from ..application.exception import PriceNotFoundException, PriceNotSchedulerException, PriceNotCreateException
-from ..domain.models import PriceBase, PriceHistory
+from ..domain.models import PriceBase
 from ..domain.ports import PricesRepositoryDomain
 from typing import Dict, Any, Tuple, List
 
@@ -25,7 +25,7 @@ class PriceService(PricesInterfaces):
 
         return price
 
-    async def get_by_history_price(self, class_call: str) -> PriceHistory:
+    async def get_by_history_price(self, class_call: str) -> PriceBase:
         price = await self.price.consult_history(call_type=class_call)
         if len(price) == 0:
             raise PriceNotFoundException("Price Not Found")
@@ -33,8 +33,8 @@ class PriceService(PricesInterfaces):
 
     async def get_by_all_history_price(
         self, page: int, per_page: int
-    ) -> Tuple[List[PriceHistory], int]:
-        price = await self.get_by_all_history_price(page=page, per_page=per_page)
+    ) -> Tuple[List[PriceBase], int]:
+        price = await self.price.find_by_all_prices_history(page=page, per_page=per_page)
         if len(price) == 0:
             raise PriceNotFoundException
         return price

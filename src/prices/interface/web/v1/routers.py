@@ -80,7 +80,7 @@ async def history_all(
         page=page, per_page=per_page
     )
     prices_history_all_validate = [
-        PriceHistoryResponse.model_validate(asdict(prices))
+        PriceResponse.model_validate(asdict(prices))
         for prices in prices_history_all
     ]
 

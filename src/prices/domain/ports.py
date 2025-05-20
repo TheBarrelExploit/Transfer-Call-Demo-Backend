@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Any
-from ..domain.models import PriceBase, PriceHistory
+from ..domain.models import PriceBase
 
 
 class PricesRepositoryDomain(ABC):
@@ -23,7 +23,7 @@ class PricesRepositoryDomain(ABC):
         pass
 
     @abstractmethod
-    async def consult_history(self, call_type: str) -> List[PriceHistory]:
+    async def consult_history(self, call_type: str) -> List[PriceBase]:
         pass
 
     @abstractmethod

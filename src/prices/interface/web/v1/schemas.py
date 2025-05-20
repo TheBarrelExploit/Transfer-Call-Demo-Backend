@@ -55,5 +55,5 @@ class PriceResponseList(BaseModel):
 
 
 class PriceHistoryList(BaseModel):
-    data: List[PriceHistoryResponse]
+    data: List[PriceResponse]
     pagination: PricePaginate

@@ -2,9 +2,10 @@ from typing import List, Dict, Tuple, Any
 from dataclasses import asdict
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.ports import PricesRepositoryDomain
-from ..domain.models import PriceBase, PriceHistory
+from pytz import timezone
+from datetime import datetime, timedelta
+from ..domain.models import PriceBase
 from src.shared.apscheduler.apscheduler_config import SchedulerConfig
-from src.shared.apscheduler.tarea_precios import execute_price_change
 
 class PriceRepository(PricesRepositoryDomain):
     def __init__(
@@ -29,7 +30,7 @@ class PriceRepository(PricesRepositoryDomain):
 
     async def find_by_all_prices_history(
         self, page: int, per_page: int
-    ) -> Tuple[List[PriceHistory], int]:
+    ) -> Tuple[List[PriceBase], int]:
         skip = (page - 1) * per_page
 
         price_history = (
@@ -37,7 +38,7 @@ class PriceRepository(PricesRepositoryDomain):
         )
         data = []
         async for mongo_data in price_history:
-            data.append(PriceHistory.from_mongo(mongo_data))
+            data.append(PriceBase.from_mongo(mongo_data))
 
         total = await self.collection_history.count_documents({})
 
@@ -59,24 +60,28 @@ class PriceRepository(PricesRepositoryDomain):
 
         return price
 
-    async def consult_history(self, call_type: str) -> List[PriceHistory]:
+    async def consult_history(self, call_type: str) -> List[PriceBase]:
         history = await self.collection_history.find({"call_type": call_type})
         data = []
         async for mongo_data in history:
-            data.append(PriceHistory.from_mongo(mongo_data))
+            data.append(PriceBase.from_mongo(mongo_data))
         return data
 
     async def update_scheduler(self, price: Dict[str, Any]) -> Dict[str, str]:
-        job_id = f"bulk_{price['update_date'].strftime('%Y%m%d')}"
+        job_id = f"bulk_{price['update_date'].strftime('%Y%m%d%H:%M:%S')}"
         print(job_id)
 
         self.scheduler.prices_changes.insert_one(
             {"_id": job_id, **price, "status": "pending"}
         )
+
+        bogota_tz = timezone('America/Bogota')
+        test_date = datetime.now(bogota_tz) + timedelta(minutes=1)
+
         self.scheduler.scheduler.add_job(
             "src.shared.apscheduler.tarea_precios:execute_price_change",
             "date",
-            run_date=price["update_date"],
+            run_date=test_date,
             id=job_id,
             kwargs={"job_id": job_id} 
         )
