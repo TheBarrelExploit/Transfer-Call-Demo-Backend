@@ -93,7 +93,7 @@ class CallService(CallInterfaces):
             })
             return await self.call_repository.find_call_by_filter(query)
     
-    async def get_report_general(self, sheet_name, admin):
+    async def get_report_general(self, sheet_name, admin = False):
         return await self.call_repository.read_report(sheet_name=sheet_name, admin=admin)
         
 

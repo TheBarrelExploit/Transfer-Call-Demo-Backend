@@ -207,11 +207,20 @@ async def general_report(
     entity: str = Query("Entidad",ge="Entidad", description="Nombre de la entidad")
 ):
     sheet_name = f"general{entity}"
-    general_report_data = await call_service.get_report_general(sheet_name=sheet_name,admin=True)
+    general_report_data = await call_service.get_report_general(sheet_name=sheet_name)
     general_report_data_validate = [CallGeneralReport.model_validate(report) for report in general_report_data]
 
     return CallGeneralReportResponse(data = general_report_data_validate)
 
+@router.get("/general_report_all", response_model=CallGeneralReportResponse,status_code=status.HTTP_200_OK)
+async def general_report_all(
+    call_service: CallService = Depends(get_user_service)
+):
+    sheet_name = f"adminGeneralReporte"
+    general_report_data_all = await call_service.get_report_general(sheet_name=sheet_name, admin =True )
+    general_report_data_all_validate = [CallGeneralReport.model_validate(report) for report in general_report_data_all]
+
+    return CallGeneralReportResponse(data = general_report_data_all_validate)
     
 
     
