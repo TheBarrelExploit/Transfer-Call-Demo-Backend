@@ -3,11 +3,14 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.models import CallBase
 from typing import List, Dict, Any
 from datetime import datetime
+from polars import DataFrame
+
 
 
 class CallRepository(CallRepositoryDomain):
-    def __init__(self, collection: AsyncIOMotorCollection):
+    def __init__(self, collection: AsyncIOMotorCollection, dataframe:Dict[str, DataFrame]):
         self.collection = collection
+        self.dataframe = dataframe
 
     async def find_call_all(self) -> List[CallBase]:
         cursor_call_data = self.collection.find({})
@@ -73,4 +76,10 @@ class CallRepository(CallRepositoryDomain):
         async for mongo_data in cursor_call_by:
             data_result.append(CallBase.from_mongo(mongo_data))
         return data_result
+    
+    async def read_report(self, sheet_name = None, admin = False) ->List[Dict[str, Any]]:
+        if admin:  
+            return self.dataframe.get(sheet_name).to_dicts()
+        
+        return self.dataframe.get(sheet_name).to_dicts()
         

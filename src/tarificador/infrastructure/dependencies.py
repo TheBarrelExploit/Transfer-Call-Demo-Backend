@@ -1,3 +1,4 @@
+import logging
 from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
@@ -6,12 +7,20 @@ from src.tarificador.infrastructure.repository import CallRepository
 from src.shared.database.mongodb import MongoDB
 from src.tarificador.application.services import CallService
 from src.auth.infrastructure.security import verify_token, is_token_blacklisted
+from jose import JWTError
+from polars import DataFrame
+
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
 
 def get_mongo(request: Request) -> MongoDB:
     return request.app.state.mongo
+
+def get_dataframe(request: Request) -> Dict[str,DataFrame]:
+    return request.app.state.excel
 
 
 def get_db(mongo: Annotated[MongoDB, Depends(get_mongo)]) -> AsyncIOMotorDatabase:
@@ -26,8 +35,9 @@ def get_users_collection(
 
 def get_user_repository(
     collection: Annotated[AsyncIOMotorCollection, Depends(get_users_collection)],
+    dataframe: Annotated[Dict[str,DataFrame], Depends(get_dataframe)]
 ) -> CallRepository:
-    return CallRepository(collection)
+    return CallRepository(collection,dataframe)
 
 
 def get_user_service(

@@ -61,6 +61,7 @@ async def update_single_price(
     collection_history: AsyncIOMotorCollection
 ):
     current_price = await collection_price.find_one({"call_type": call_type})
+    current_price.pop("_id")
 
     if not current_price:
         raise ValueError(f"No se encontró el precio para {call_type}")

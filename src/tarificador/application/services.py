@@ -91,7 +91,10 @@ class CallService(CallInterfaces):
                 field: {"$in": value} for field in list_fields
                 if (value := getattr(data, field))
             })
-            
             return await self.call_repository.find_call_by_filter(query)
+    
+    async def get_report_general(self, sheet_name, admin):
+        return await self.call_repository.read_report(sheet_name=sheet_name, admin=admin)
+        
 
             

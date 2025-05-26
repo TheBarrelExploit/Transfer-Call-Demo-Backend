@@ -1,20 +1,37 @@
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field, AliasPath
+from typing import List, Optional
 from datetime import datetime
 
 
 class CallRequest(BaseModel):
-    start_date: datetime = None
-    end_date:datetime = None
-    originational_number: str = None
-    connected_number: str = None
+    start_date: Optional[datetime] = None
+    end_date:Optional[datetime] = None
+    originational_number: Optional[str] = None
+    connected_number: Optional[str] = None
     type_of_call: List[str] = None
     kind_of_call: List[str] = None
     class_call: List[str] = None
 
+
+class CallGeneralReport(BaseModel):
+    dialed_entity:str=Field(validation_alias=AliasPath('Entidad'))
+    local:int =Field(validation_alias=AliasPath('Local'))
+    premium:int = Field(validation_alias=AliasPath('premium'))
+    international:int = Field(validation_alias=AliasPath('international'))
+    lda:int = Field(validation_alias=AliasPath('larga distancia intra'))
+    ldi:int = Field(validation_alias=AliasPath('larga distancia inter'))
+    call_total:int = Field(validation_alias=AliasPath("total llamadas"))
+    any_minutes:int = Field(validation_alias=AliasPath('minutos a cobrar'))
+    total_to_pay:float = Field(validation_alias=AliasPath('cobro total'))
+
+class CallGeneralReportResponse(BaseModel):
+    data:List[CallGeneralReport]
+
+
 class CallBaseResponse(BaseModel):
     id: str = Field(alias="_id")
     originational_number: str
+    dialed_entity:str
     connected_number: str
     start_date: datetime
     end_date: datetime

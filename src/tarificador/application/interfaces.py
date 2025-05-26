@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict, Any
 from ..domain.models import CallBase
 
 
@@ -38,4 +38,8 @@ class CallInterfaces(ABC):
 
     @abstractmethod
     async def get_call_by_filter(self, data: List[str]) -> List[CallBase]:
+        pass
+
+    @abstractmethod
+    async def get_report_general(self,sheet_name:str, admin:bool) -> List[Dict[str, Any]]:
         pass

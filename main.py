@@ -14,6 +14,7 @@ from pymongo import MongoClient
 from dataclasses import asdict
 from src.users.domain.models import UserBase, MFAConfig
 from datetime import datetime, timezone
+import polars as pl
 # get settings from environment variables
 
 settings = get_settings()
@@ -28,6 +29,8 @@ async def lifespan(app: FastAPI):
     # Connect to MongoDB
     sync_mongo_client = MongoClient(settings.MONGO_URI, maxPoolSize=10)
     mongo = MongoDB()
+    
+    sheet = pl.read_excel(source="src/shared/reportes.xlsx", sheet_id= 0)
     await mongo.connect(settings.MONGO_URI, settings.MONGO_DB)
 
     apscheduler = SchedulerConfig(
@@ -37,6 +40,7 @@ async def lifespan(app: FastAPI):
 
     app.state.mongo = mongo
     app.state.scheduler = apscheduler
+    app.state.excel = sheet
 
     # Crear usuario de prueba si no existe
     users_col = mongo.get_collection("users")

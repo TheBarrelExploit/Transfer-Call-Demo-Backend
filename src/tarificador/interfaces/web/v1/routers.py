@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi import APIRouter, Depends, HTTPException, status, Security, Query
 from dataclasses import asdict
-from typing import Optional, Dict, Tuple, Any
+from typing import Optional
 from src.tarificador.application.services import CallService
 from src.tarificador.application.exception import CallNotFoundException
 from src.tarificador.infrastructure.dependencies import (
     get_user_service,
     get_current_payload,
 )
-from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse, CallRequest
+from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse, CallRequest, CallGeneralReport, CallGeneralReportResponse
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
@@ -200,6 +200,18 @@ async def call_by_filter(
     call_validate = [CallBaseResponse.model_validate(asdict(data)) for data in call]
 
     return CallResponse(data= call_validate)
+
+@router.get("/general_report",response_model= CallGeneralReportResponse, status_code = status.HTTP_200_OK)
+async def general_report(   
+    call_service: CallService = Depends(get_user_service),
+    entity: str = Query("Entidad",ge="Entidad", description="Nombre de la entidad")
+):
+    sheet_name = f"general{entity}"
+    general_report_data = await call_service.get_report_general(sheet_name=sheet_name,admin=True)
+    general_report_data_validate = [CallGeneralReport.model_validate(report) for report in general_report_data]
+
+    return CallGeneralReportResponse(data = general_report_data_validate)
+
     
 
     

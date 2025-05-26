@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from .models import CallBase
 
 
@@ -34,4 +34,8 @@ class CallRepositoryDomain(ABC):
 
     @abstractmethod
     async def find_call_by_filter(self, data: Dict[str, Any]) -> List[CallBase]:
+        pass
+
+    @abstractmethod
+    async def read_report(self,sheet_name: Optional[str]=None, admin: Optional[bool] = False) -> List[Dict]:
         pass
