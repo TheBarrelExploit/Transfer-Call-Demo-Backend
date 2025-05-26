@@ -7,6 +7,7 @@ from src.shared.apscheduler.apscheduler_config import SchedulerConfig
 from contextlib import asynccontextmanager
 from src.users.interfaces.web.v1.routers import router as users_router_v1
 from src.auth.interfaces.web.v1.routers import router as auth_router_v1
+from src.datasend.interfaces.web.v1.routers import router as emailsend_router_v1
 from src.tarificador.interfaces.web.v1.routers import router as call_router_v1
 from src.prices.interface.web.v1.routers import router as price_router_v1
 from src.auth.infrastructure.security import get_password_hash
@@ -118,6 +119,7 @@ app.include_router(auth_router_v1, prefix="/api")
 app.include_router(users_router_v1, prefix="/api")
 app.include_router(call_router_v1, prefix="/api")
 app.include_router(price_router_v1, prefix="/api")
+app.include_router(emailsend_router_v1, prefix="/api")
 
 
 @app.get("/")

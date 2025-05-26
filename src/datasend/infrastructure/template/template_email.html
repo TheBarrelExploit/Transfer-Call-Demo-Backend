@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Llamadas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 {
+            color: #2a8fd4;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .logo {
+            margin-top: 20px;
+            max-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📞 Reporte de Llamadas</h2>
+        <p>Hola <strong>{{username}}</strong>,</p>
+        <p>Adjunto se encontrara el reporte de llamadas que solicitaste.</p>
+
+        <p><strong>Fecha de generación:</strong><br>{{date}}</p>
+
+        <p>Si tiene alguna duda o necesita asistencia adicional, no dude en contactarnos.</p>
+
+        <p>Saludos cordiales,<br>
+        <strong>El equipo de soporte</strong></p>
+
+        <div class="footer">
+            <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+            <img src="login.png" alt="Logo del Proyecto" class="logo">
+        </div>
+    </div>
+</body>
+</html>
