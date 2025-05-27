@@ -28,10 +28,6 @@ conf = ConnectionConfig(
     MAIL_STARTTLS=settings.MAIL_STARTTLS,
     MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
     USE_CREDENTIALS=settings.MAIL_USE_CREDENTIALS,
-    # VALIDATE_CERTS=settings.MAIL_VALIDATE_CERTS,
-    # TEMPLATE_FOLDER=None,
-    # SUPPRESS_SEND=0,
-    # TIMEOUT=10  # Aumenta el timeout si es necesario
 )
 
 

@@ -23,6 +23,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/emailsend", tags=["emailsend"])
 security = HTTPBearer()
 
+async def template_email(template_name: str, context:dict)->str:
+    try:
+        template_path = Path()/ "src" / "datasend" / "infrastructure" / "template" / template_name
+        with open(template_path.resolve(), encoding="utf-8") as f:
+            template_str = f.read()
+        template = Template(template_str)
+        return template.render(**context)
+    except Exception as e:
+        logger.error(f"Error al cargar o renderizar plantilla {template_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al procesar la plantilla de email: {str(e)}"
+        )
+
+
 # ENVIO DE REPORTE VIA EMAIL
 @router.post("/send-report-email")
 async def send_report_email_endpoint(
@@ -55,17 +70,13 @@ async def send_report_email_endpoint(
                 status_code=400, detail="El usuario no tiene un email registrado"
             )
         
-        template_path = Path() / "src" /  "datasend"/ "infrastructure"  / "template"  / "template_email.html"
-        print(template_path)
-        with open(template_path.resolve(), encoding="utf-8") as f:
-            template_str = f.read()
-
-            # Renderizar el contenido del HTML
-        template = Template(template_str)
-        rendered_body = template.render(
-            username=current_user.username,
-            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        #renderizar la plantilla usando template_mail
+        rendered_body = await template_email(
+            template_name = "template_email.html", 
+            context={
+                "username": current_user.username,
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
 
         # Crear archivo temporal
         with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
@@ -113,3 +124,10 @@ async def send_report_email_endpoint(
         raise HTTPException(
             status_code=500, detail="Error interno al procesar la solicitud"
         )
+
+
+# super admin crea usuario y debe proporcionar un correo email, debo enviar mensaje a ese email con 
+# una contraseña provisional(sera de 6 digitos random, quedara guardada en base de datos asociado al 
+# correo) para inicio de sesion, el usuario debe hacer cambio de contraseña, por lo que debo hacer uso del api que hace que hace cambio
+# de contraseña
+
