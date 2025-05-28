@@ -59,6 +59,9 @@ class UserUpdateRequest(BaseModel):
     roles: List[str] = None
     logo: Optional[str] = None
     complete_profile: bool = None
+    username:Optional[str] = None
+    email:Optional[EmailStr] = None
+    email_destination:Optional[EmailStr] = None
 
 
 class UserChangePassword(BaseModel):

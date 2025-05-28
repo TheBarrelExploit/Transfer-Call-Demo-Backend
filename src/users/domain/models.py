@@ -32,6 +32,7 @@ class UserBase:
     mfa: MFAConfig = field(default_factory=MFAConfig)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    email_destination:Optional[str] = None
 
     # Campo interno para MongoDB (no incluido en __init__)
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)
