@@ -49,17 +49,21 @@ async def prices_all(
 )
 async def price_by(
     class_price: str,
+    page: int = Query(1, ge=1, description="Numero de página"),
+    per_page: int = Query(10, le=100, description="Items por página"),
     prices_services: PriceService = Depends(get_service_price)
 ) -> PriceResponseList:
-    prices_by = await prices_services.get_by_price(class_call=class_price)
-    prices_by = asdict(prices_by)
-    prices_by_validation = [PriceResponse.model_validate(prices_by)]
-
+    class_prices= [item.strip() for item in class_price.split(',')]
+    prices_by, total  = await prices_services.get_by_price(class_call=class_prices)
+    prices_by_validation = [PriceResponse.model_validate(asdict(prices)) for prices in prices_by]
+    
+    total_pages = (total + per_page - 1) // per_page
+    
     pagination = {
-        "total": 0,
-        "page": 0,
-        "per_page": 0,
-        "total_pages": 0,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
     }
 
     return PriceResponseList(data=prices_by_validation, pagination= pagination)
@@ -97,7 +101,7 @@ async def history_all(
 
 @router.get(
     "/prices_history_by",
-    response_model=PriceHistoryResponse,
+    response_model=PriceHistoryList,
     status_code=status.HTTP_200_OK,
 )
 async def history_by(
@@ -105,17 +109,19 @@ async def history_by(
     prices_service: PriceService = Depends(get_service_price),
     page: int = Query(1, ge=1, description="Numero de página"),
     per_page: int = Query(10, le=100, description="Items por página"),
-    credentials: HTTPAuthorizationCredentials = Security(security)
-) -> PriceHistoryResponse:
-    price_history_by, total = await prices_service.get_by_history_price(class_call=class_price)
+    #credentials: HTTPAuthorizationCredentials = Security(security)
+) -> PriceHistoryList:
+    class_prices = [item.strip() for item in class_price.split(',')]
+    price_history_by, total = await prices_service.get_by_history_price(class_call=class_prices)
     total_pages = (total + per_page - 1) // per_page
+    price_history_by_validate = [PriceResponse.model_validate(asdict(price)) for price in price_history_by]
     pagination = {
         "total": total,
         "page": page,
         "per_page": per_page,
-        "total_page": total_pages,
+        "total_pages": total_pages,
     }
-    return PriceHistoryResponse(asdict(price_history_by))
+    return PriceHistoryList(data=price_history_by_validate, pagination= pagination)
 
 
 @router.put("/price_update", status_code=status.HTTP_202_ACCEPTED)

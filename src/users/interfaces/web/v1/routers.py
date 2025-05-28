@@ -71,7 +71,7 @@ async def get_user(
     }
     return UserResponseList(user = user_all_validate , pagination= pagination)
 
-@router.delete("/delete_user/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/delete_user/{user_id}", status_code=status.HTTP_200_OK)
 async def delete_user(
     user_id: str = Path(..., description="id del usuario a eliminar"),
     user_service: UserService = Depends(get_user_service)
@@ -81,8 +81,7 @@ async def delete_user(
 
         delete = await user_service.delete_user(id=user_id)
 
-        print(delete)
-        return
+        return {"status":"success","delete": delete}
     except UserNotFoundException as e:
         raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail=str(e))
 

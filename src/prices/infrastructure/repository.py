@@ -45,10 +45,14 @@ class PriceRepository(PricesRepositoryDomain):
         return data, total
 
     async def find_by_call_type(self, call_type: str) -> PriceBase:
-        price = await self.collection.find_one(
-            {"call_type": call_type, "is_active": True}
+        price = self.collection.find(
+            {"call_type":{"$in": call_type}, "is_active": True}
         )
-        return PriceBase.from_mongo(price)
+        data = []
+        async for mongo_data in price:
+            data.append(PriceBase.from_mongo(mongo_data))
+        total = await self.collection_history.count_documents({"call_type":{"$in": call_type}, "is_active": True})
+        return data, total
 
     async def create_prices(self, price: PriceBase) -> PriceBase:
         data = asdict(price)
@@ -60,12 +64,13 @@ class PriceRepository(PricesRepositoryDomain):
 
         return price
 
-    async def consult_history(self, call_type: str) -> List[PriceBase]:
-        history = await self.collection_history.find({"call_type": call_type})
+    async def consult_history(self, call_type:List) -> Tuple[List[PriceBase],int]:
+        history = self.collection_history.find({"call_type": {"$in": call_type}})
         data = []
         async for mongo_data in history:
             data.append(PriceBase.from_mongo(mongo_data))
-        return data
+        total = await self.collection_history.count_documents({"call_type": {"$in": call_type}})
+        return data, total
 
     async def update_scheduler(self, price: Dict[str, Any]) -> Dict[str, str]:
         job_id = f"bulk_{price['update_date'].strftime('%Y%m%d%H:%M:%S')}"

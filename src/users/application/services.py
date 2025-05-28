@@ -66,7 +66,7 @@ class UserService(UserServiceUser):
             roles=user.roles,
             mfa=MFAConfig(),
             auth_provider=AuthProvider.LOCAL,
-            complete_profile=True,
+            complete_profile=False,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )

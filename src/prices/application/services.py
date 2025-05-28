@@ -18,18 +18,18 @@ class PriceService(PricesInterfaces):
 
         return price
 
-    async def get_by_price(self, class_call: str) -> PriceBase:
+    async def get_by_price(self, class_call: List) -> Tuple[List[PriceBase], int]:
         price = await self.price.find_by_call_type(call_type=class_call)
         if not price:
             raise PriceNotFoundException("Price Not Found")
 
         return price
 
-    async def get_by_history_price(self, class_call: str) -> PriceBase:
-        price = await self.price.consult_history(call_type=class_call)
+    async def get_by_history_price(self, class_call: List) -> PriceBase:
+        price, total = await self.price.consult_history(call_type=class_call)
         if len(price) == 0:
             raise PriceNotFoundException("Price Not Found")
-        return price
+        return price, total
 
     async def get_by_all_history_price(
         self, page: int, per_page: int
