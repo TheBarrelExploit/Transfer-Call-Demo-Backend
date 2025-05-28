@@ -87,6 +87,7 @@ class UserResponse(BaseModel):
     updated_at: Optional[datetime] = None
     auth_provider: AuthProvider
     complete_profile: bool
+    status:str = "success"
 
 class UserResponseSSO(BaseModel):
     user:UserResponse
