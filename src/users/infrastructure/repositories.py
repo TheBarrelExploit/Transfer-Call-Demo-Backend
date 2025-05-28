@@ -5,7 +5,9 @@ from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.models import UserBase, MFAConfig
 from ..domain.ports import UserRepository
+import logging
 
+logger = logging.getLogger(__name__)
 
 class DBUserRepository(UserRepository):
     def __init__(self, collection: AsyncIOMotorCollection):

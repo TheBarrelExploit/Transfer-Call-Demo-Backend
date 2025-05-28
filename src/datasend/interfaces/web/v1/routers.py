@@ -37,7 +37,6 @@ async def template_email(template_name: str, context:dict)->str:
             detail=f"Error al procesar la plantilla de email: {str(e)}"
         )
 
-
 # ENVIO DE REPORTE VIA EMAIL
 @router.post("/send-report-email")
 async def send_report_email_endpoint(
@@ -47,7 +46,6 @@ async def send_report_email_endpoint(
     user_repo: UserRepository = Depends(get_user_repository),
 ):
     # Ruta del template (ajustado con Path para mayor portabilidad)
-
     try:
         # Obtener el token de manera más robusta
         token = credentials.credentials
@@ -62,14 +60,30 @@ async def send_report_email_endpoint(
         logger.info(
             f"Usuario obtenido: {current_user.username}, Email: {current_user.email}"
         )
-
-        # Verificar que el usuario tenga email
-        if not current_user.email:
-            logger.error("El usuario no tiene email registrado")
+        
+        #Determinar el email de destino
+        destination_email = current_user.email_destination if current_user.email_destination else current_user.email
+        
+        # Verificar que el usuario tenga email destino
+        if not destination_email:
+            logger.error("El usuario no tiene email registrado ni email alternativo")
             raise HTTPException(
-                status_code=400, detail="El usuario no tiene un email registrado"
+                status_code=400, detail="No se encontró un email válido para enviar el reporte"
             )
         
+        
+        #validar formato del email de destino si es diferente al principal
+        if destination_email != current_user.email:
+            try:
+                if "@" not in destination_email or "." not in destination_email.split("@")[-1]:
+                    raise ValueError("Formato de email invalido")
+            except Exception as e:
+                logger.error(f"Email de destino invalido{destination_email}")
+                raise HTTPException(
+                    status_code=400,
+                    detail = "El email de destino especificado no tiene un formato valido"
+                )
+                
         #renderizar la plantilla usando template_mail
         rendered_body = await template_email(
             template_name = "template_email.html", 
@@ -102,7 +116,6 @@ async def send_report_email_endpoint(
                         "subtype": "pdf",
                     }
                 ]
-                
             )
             print(file.filename)
 
@@ -112,6 +125,7 @@ async def send_report_email_endpoint(
                 "status": "success",
                 "message": f"Reporte enviado a {current_user.email}",
                 "email": current_user.email,
+                "is_alternative_email": destination_email != current_user.email
             }
         finally:
             if os.path.exists(temp_file_path):
@@ -125,9 +139,4 @@ async def send_report_email_endpoint(
             status_code=500, detail="Error interno al procesar la solicitud"
         )
 
-
-# super admin crea usuario y debe proporcionar un correo email, debo enviar mensaje a ese email con 
-# una contraseña provisional(sera de 6 digitos random, quedara guardada en base de datos asociado al 
-# correo) para inicio de sesion, el usuario debe hacer cambio de contraseña, por lo que debo hacer uso del api que hace que hace cambio
-# de contraseña
 
