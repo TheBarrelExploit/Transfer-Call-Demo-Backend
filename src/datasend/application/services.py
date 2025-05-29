@@ -129,7 +129,7 @@ class EmailService:
             template_name="template_create_user.html",  # Reutiliza el template existente
             subject="Bienvenido - Configura tu contraseña",
             purpose="complete_profile",
-            expiration_minutes=1440,  # 24 horas para nuevos usuarios
+            expiration_minutes=60,  # 1 hora para nuevos usuarios
             extra_context={
                 "welcome_message": "¡Bienvenido a nuestra plataforma!",
                 "instructions": "Se ha creado tu cuenta. Por favor, configura tu contraseña usando el enlace a continuación.",

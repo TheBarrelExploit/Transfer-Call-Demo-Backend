@@ -51,7 +51,7 @@ async def create_user(
         )
 
 
-@router.post("/change_password", response_model=UserChangePasswordResponse, status_code=status.HTTP_200_OK)
+@router.put("/change_password", response_model=UserChangePasswordResponse, status_code=status.HTTP_200_OK)
 async def change_password(
     user_data: UserChangePassword,
     user_service: UserService = Depends(get_user_service),
