@@ -62,7 +62,7 @@ async def send_report_email_endpoint(
         )
         
         #Determinar el email de destino
-        destination_email = current_user.email_destination if current_user.email_destination else current_user.email
+        destination_email = current_user.email_destination or current_user.email
         
         # Verificar que el usuario tenga email destino
         if not destination_email:
@@ -106,7 +106,7 @@ async def send_report_email_endpoint(
         try:
             # Preparar y enviar email
             email_data = EmailSchema(
-                email_to=[current_user.email],
+                email_to=[destination_email],
                 subject=f"Reporte de Llamadas - {datetime.now().strftime('%Y-%m-%d')}",
                 body=rendered_body,
                 attachments=[
@@ -123,8 +123,8 @@ async def send_report_email_endpoint(
 
             return {
                 "status": "success",
-                "message": f"Reporte enviado a {current_user.email}",
-                "email": current_user.email,
+                "message": f"Reporte enviado a {destination_email}",
+                "email": destination_email,
                 "is_alternative_email": destination_email != current_user.email
             }
         finally:
