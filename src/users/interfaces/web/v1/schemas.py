@@ -69,7 +69,7 @@ class UserChangePassword(BaseModel):
     Change Password User
     """
 
-    id: str
+    secret_token: str
     new_password: str
 
 

@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any, Tuple
 from passlib.context import CryptContext
 from datetime import datetime, timezone
-
+from base64 import b64encode
 from .interfaces import UserServiceUser
 from .exception import (
     UserNotFoundException,
@@ -67,6 +67,7 @@ class UserService(UserServiceUser):
             mfa=MFAConfig(),
             auth_provider=AuthProvider.LOCAL,
             complete_profile=False,
+            logo= await self.image_to_b64("src/shared/Logo_2.png"),
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -104,19 +105,28 @@ class UserService(UserServiceUser):
         return await self.repository.list(page, per_page)
 
     async def change_password(
-        self, id: str, old_password: str, new_password: str
-    ) -> UserBase:
-        user = await self.repository.find_by_id(id)
+        self, email: str, new_password: str
+    ) -> bool:
+        user = await self.repository.find_by_email(email=email)
         if not user:
-            raise UserNotFoundException(f"User with id {id} not found")
-
-        if not self._verify_password(old_password, user.password_hash):
-            raise InvalidPasswordException("Invalid password")
+            raise UserNotFoundException(f"User with email {email} not found")
 
         return await self.repository.update(
-            id,
+            email,
             {
                 "password": self._hash_password(new_password),
                 "updated_at": datetime.now(timezone.utc),
             },
         )
+    
+    async def image_to_b64(self, img:str)->str:
+        try:
+            with open(img,"rb") as image:
+                img_data = image.read()
+                img_b64 = b64encode(img_data).decode("utf-8")
+                return img_b64
+        except FileNotFoundError as e:
+            print(f"Error: no se encontro el archivo {e}")
+            return ""
+
+        

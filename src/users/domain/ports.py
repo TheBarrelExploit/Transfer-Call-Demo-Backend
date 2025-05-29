@@ -30,7 +30,7 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, id: str, data: dict) -> Optional[UserBase]:
+    async def update(self, id: str, data: dict) -> bool:
         """update a user"""
         pass
 

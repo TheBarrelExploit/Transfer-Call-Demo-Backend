@@ -34,12 +34,12 @@ class DBUserRepository(UserRepository):
         user._id = str(result.inserted_id)
         return user
 
-    async def update(self, id: str, data: dict) -> Optional[UserBase]:
+    async def update(self, id: str, data: dict) -> bool:
         await self.collection.update_one(
             {"_id": ObjectId(id)},
             {"$set": {**data, "updated_at": datetime.now(timezone.utc)}},
         )
-        return await self.find_by_id(id)
+        return True
 
     async def delete(self, id:str) -> None:
         result = await self.collection.delete_one({"_id": ObjectId(id)})

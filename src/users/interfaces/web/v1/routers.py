@@ -1,8 +1,9 @@
 from dataclasses import asdict
+from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
-from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest, UserResponseList
+from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest, UserResponseList, UserChangePassword
 from src.users.application.services import UserService
-from src.users.infrastructure.dependencies import get_user_service
+from src.users.infrastructure.dependencies import get_user_service, get_verify_token
 from src.users.application.exception import EmailAlreadyExistsException, UserNotFoundException
 
 
@@ -29,8 +30,18 @@ async def create_user(
 
 
 @router.post("/change_password")
-async def change_password():
-    print("")
+async def change_password(
+    user_data: UserChangePassword,
+    user_service: UserService = Depends(get_user_service),
+    auth_token:Dict[str, Any] = Depends(get_verify_token)
+):
+    verify_token:Dict[str, Any] = auth_token(user_data.secret_token)
+    if not verify_token:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Enlace no valido para el cambio de la contraseña")    
+    
+    password = await user_service.change_password(email = verify_token.get("email"), new_password=user_data.new_password)
+
+    return password
 
 
 @router.put("/update_user", response_model=UserResponse)
