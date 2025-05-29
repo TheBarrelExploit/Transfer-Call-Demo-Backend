@@ -18,9 +18,9 @@ class CallClass(str, Enum):
         Mantiene compatibilidad con el código existente.
         """
         mapping = {
-            cls.LONG_DISTANCE_INTER: "Larga distancia internacional",
+            cls.LONG_DISTANCE_INTER: "Larga distancia inter",
             cls.LOCAL: "Local",
-            cls.LONG_DISTANCE_INTRA: "Larga distancia nacional",
+            cls.LONG_DISTANCE_INTRA: "Larga distancia intra",
             cls.INTERNATIONAL: "Internacional",
             cls.PREMIUM: "Premium",
         }

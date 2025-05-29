@@ -20,7 +20,17 @@ class PriceRepository(PricesRepositoryDomain):
 
     async def find_by_all_prices(self, page:int, per_page:int) -> Tuple[List[PriceBase], int]:
         skip = (page - 1) * per_page
-        price = self.collection.find({}).skip(skip=skip).limit(per_page)
+        price = self.collection.aggregate(
+            [
+                {
+                    "$set": {  # Solo afecta los resultados, NO la BD
+                        "rate_per_minute": {"$divide": ["$rate_per_minute", 100]},
+                    }
+                },
+                { "$limit": per_page },
+                { "$skip": skip }
+            ]
+        )
         data = []
         async for mongo_data in price:
             data.append(PriceBase.from_mongo(mongo_data))
@@ -48,19 +58,19 @@ class PriceRepository(PricesRepositoryDomain):
 
     async def find_by_call_type(self, call_type: str) -> PriceBase:
         price = self.collection.aggregate(
-[
-    {
-        "$match": {
-            "call_type": {"$in": call_type},
-            "is_active": True
-        }
-    },
-    {
-        "$set": {  # Solo afecta los resultados, NO la BD
-            "rate_per_minute": {"$divide": ["$rate_per_minute", 100]},
-        }
-    }
-]
+            [
+                {
+                    "$match": {
+                        "call_type": {"$in": call_type},
+                        "is_active": True
+                    }
+                },
+                {
+                    "$set": {  # Solo afecta los resultados, NO la BD
+                        "rate_per_minute": {"$divide": ["$rate_per_minute", 100]},
+                    }
+                }
+            ]
         )
         data = []
         async for mongo_data in price:
@@ -79,9 +89,22 @@ class PriceRepository(PricesRepositoryDomain):
         return price
 
     async def consult_history(self, call_type:List) -> Tuple[List[PriceBase],int]:
-        history = self.collection_history.find({"call_type": {"$in": call_type}})
+        price = self.collection_history.aggregate(
+            [
+                {
+                    "$match": {
+                        "call_type": {"$in": call_type},
+                    }
+                },
+                {
+                    "$set": {  # Solo afecta los resultados, NO la BD
+                        "rate_per_minute": {"$divide": ["$rate_per_minute", 100]},
+                    }
+                }
+            ]
+        )
         data = []
-        async for mongo_data in history:
+        async for mongo_data in price:
             data.append(PriceBase.from_mongo(mongo_data))
         total = await self.collection_history.count_documents({"call_type": {"$in": call_type}})
         return data, total
