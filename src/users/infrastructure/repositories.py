@@ -79,7 +79,7 @@ class DBUserRepository(UserRepository):
                     "mfa": asdict(mfa_config),
                     "updated_at": datetime.now(
                         timezone.utc
-                    ),  # <-- Quita los paréntesis
+                    ),  
                 }
             },
         )

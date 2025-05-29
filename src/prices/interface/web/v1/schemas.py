@@ -24,7 +24,7 @@ class PriceUpdate(BaseModel):
 
 class PriceResponse(BaseModel):
     call_type: str
-    rate_per_minute: int
+    rate_per_minute: float
     divisa: str
     valid_from: datetime
     is_active: bool

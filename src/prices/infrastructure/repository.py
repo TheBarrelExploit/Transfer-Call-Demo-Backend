@@ -34,7 +34,9 @@ class PriceRepository(PricesRepositoryDomain):
         skip = (page - 1) * per_page
 
         price_history = (
-            self.collection_history.find({}).skip(skip=skip).limit(limit=per_page)
+            self.collection_history.find({"$expr":{"gt": [
+                {"$divide":["$rate_per_minute",100]}
+            ]}}).skip(skip=skip).limit(limit=per_page)
         )
         data = []
         async for mongo_data in price_history:
@@ -45,8 +47,20 @@ class PriceRepository(PricesRepositoryDomain):
         return data, total
 
     async def find_by_call_type(self, call_type: str) -> PriceBase:
-        price = self.collection.find(
-            {"call_type":{"$in": call_type}, "is_active": True}
+        price = self.collection.aggregate(
+[
+    {
+        "$match": {
+            "call_type": {"$in": call_type},
+            "is_active": True
+        }
+    },
+    {
+        "$set": {  # Solo afecta los resultados, NO la BD
+            "rate_per_minute": {"$divide": ["$rate_per_minute", 100]},
+        }
+    }
+]
         )
         data = []
         async for mongo_data in price:

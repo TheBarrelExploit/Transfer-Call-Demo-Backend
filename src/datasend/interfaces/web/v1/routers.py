@@ -81,7 +81,7 @@ async def send_report_email_endpoint(
                 logger.error(f"Email de destino invalido{destination_email}")
                 raise HTTPException(
                     status_code=400,
-                    detail = "El email de destino especificado no tiene un formato valido"
+                    detail = "El email de destino especificado no tiene un formato valido, por favor actualizar el correo destino a un formato valido."
                 )
                 
         #renderizar la plantilla usando template_mail
