@@ -1,12 +1,15 @@
 from dataclasses import asdict
 from typing import Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Path
 from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest, UserResponseList, UserChangePassword, UserChangePasswordResponse
 from src.users.application.services import UserService
 from src.users.infrastructure.dependencies import get_user_service, get_verify_token
 from src.users.application.exception import EmailAlreadyExistsException, UserNotFoundException
+from src.datasend.application.services import EmailService
+from src.datasend.interfaces.web.v1.dependencies import get_email_service
+import logging
 
-
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/users", tags=["users"])
 
 
@@ -14,13 +17,30 @@ router = APIRouter(prefix="/v1/users", tags=["users"])
     "/create_user", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
 async def create_user(
-    user_data: UserCreateRequest, user_service: UserService = Depends(get_user_service)
+    user_data: UserCreateRequest,
+    background_tasks: BackgroundTasks,
+    user_service: UserService = Depends(get_user_service),
+    email_service: EmailService = Depends(get_email_service)
 ):
     try:
         created_user = await user_service.create_user(user_data)
         user_dict = created_user.__dict__.copy()
         user_dict["mfa"] = created_user.mfa.__dict__
+        
+        # NUEVA FUNCIONALIDAD: Enviar email de bienvenida
+        try:
+            # La contraseña provisional es la que ya registrada en la BD
+            # (la que viene en user_data.password)
+            await email_service.send_welcome_email(
+                background_tasks=background_tasks,
+                email=created_user.email,
+                provisional_password=user_data.password  # Contraseña provisional generada por el frontend
+            )
+            logger.info(f"Email de bienvenida enviado a {created_user.email}")
+        except Exception as email_error:
+            logger.error(f"Error al enviar email de bienvenida a {created_user.email}: {str(email_error)}")        
         return UserResponse.model_validate(user_dict)
+        
     except EmailAlreadyExistsException as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except Exception as e:

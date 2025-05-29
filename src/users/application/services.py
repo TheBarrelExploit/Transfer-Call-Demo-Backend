@@ -112,6 +112,7 @@ class UserService(UserServiceUser):
             email,
             {
                 "password_hash": self._hash_password(new_password),
+                "complete_profile": True,
                 "updated_at": datetime.now(timezone.utc),
             },
         )

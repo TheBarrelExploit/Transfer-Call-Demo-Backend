@@ -10,14 +10,14 @@ from fastapi import (
 )
 from fastapi.security import HTTPAuthorizationCredentials,HTTPBearer
 from src.datasend.infrastructure.email import send_email_background, EmailSchema
+from src.datasend.application.services import EmailService, template_email
+from src.datasend.interfaces.web.v1.dependencies import get_email_service
 from src.users.domain.ports import UserRepository
 from src.auth.interfaces.web.v1.dependencies import get_current_user, get_user_repository
 from src.auth.infrastructure.security import create_access_token
 from tempfile import NamedTemporaryFile
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
-from jinja2 import Template
-from pathlib import Path
 
 import logging
 import os
@@ -33,20 +33,6 @@ class PasswordRecoveryResponse(BaseModel):
     message: str
     success: bool
     token: str 
-
-async def template_email(template_name: str, context:dict)->str:
-    try:
-        template_path = Path()/ "src" / "datasend" / "infrastructure" / "template" / template_name
-        with open(template_path.resolve(), encoding="utf-8") as f:
-            template_str = f.read()
-        template = Template(template_str)
-        return template.render(**context)
-    except Exception as e:
-        logger.error(f"Error al cargar o renderizar plantilla {template_name}: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al procesar la plantilla de email: {str(e)}"
-        )
 
 # ENVIO DE REPORTE VIA EMAIL
 @router.post("/send-report-email")
@@ -150,67 +136,31 @@ async def send_report_email_endpoint(
             status_code=500, detail="Error interno al procesar la solicitud"
         )
 
-
-@router.post("/password-recovery", )
+@router.post("/password-recovery")
 async def password_recovery(
     background_tasks: BackgroundTasks,
     request: PasswordRecoveryRequest,
-    user_repo: UserRepository = Depends(get_user_repository)
+    email_service: EmailService = Depends(get_email_service)
 ):
-    #Enviar un correo con instrucciones para recuperar la contraseña
+    """Enviar un correo con instrucciones para recuperar la contraseña"""
     try:
-        #existe el email en la base de datos?
-        user = await user_repo.find_by_email(request.email)
-        if not user:
-            logger.warning(f"Intento de recuperacion para email no registrado:{request.email}")
-            return {
-                "message": "Si el email esta registrado, recibira un correo con instrucciones",
-                "succes": True
-            }
-        
-        token_data = {
-            "id": str(user.id),
-            "sub":user.username,
-            "email": user.email,
-            "purpose": "password_reset"
-        }
-        
-        access_token = create_access_token(
-            data=token_data,
-            expires_delta=timedelta(minutes=60)
+        # Toda la lógica compleja ahora está en el servicio
+        success = await email_service.send_password_recovery_email(
+            background_tasks=background_tasks,
+            email=request.email
         )
         
-        #preparar el enlace de recuperacion
-        recovery_url = f"http://127.0.0.1:5500/Transfer-Call-Demo/Transfer-Call-Demo-FrontEnd/html/password.html?token={access_token}"
-
-        #renderizar el template del email
-        rendered_body = await template_email(
-            template_name= "template_password_recovery.html",
-            context = {
-                "username": user.username,
-                "recovery_url": recovery_url,
-            }
-        )
-        
-        #preparar y enviar el email
-        email_data = EmailSchema(
-            email_to=[request.email],
-            subject="Cambio de contraseña",
-            body= rendered_body,
-            attachments= []
-        )
-        
-        await send_email_background(background_tasks, email_data)
-        
-        logger.info(f"Email de cambio de contraseña enviado a: {request.email}")
-        
-        return{
-            "message": "Si el email esta registrado, recibiras un correo con instrucciones",
+        # Siempre devolver el mismo mensaje por seguridad
+        return {
+            "message": "Si el email está registrado, recibirás un correo con instrucciones",
             "success": True
         }
+        
     except Exception as e:
         logger.error(f"Error en password_recovery: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Error al procesar la solicitud de recuperacion de contraseña"
+            detail="Error al procesar la solicitud de recuperación de contraseña"
         )
+
+
