@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
-from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest, UserResponseList, UserChangePassword
+from .schemas import UserCreateRequest, UserResponse, UserUpdateRequest, UserResponseList, UserChangePassword, UserChangePasswordResponse
 from src.users.application.services import UserService
 from src.users.infrastructure.dependencies import get_user_service, get_verify_token
 from src.users.application.exception import EmailAlreadyExistsException, UserNotFoundException
@@ -29,7 +29,7 @@ async def create_user(
         )
 
 
-@router.post("/change_password")
+@router.post("/change_password", response_model=UserChangePasswordResponse, status_code=status.HTTP_200_OK)
 async def change_password(
     user_data: UserChangePassword,
     user_service: UserService = Depends(get_user_service),
@@ -40,11 +40,11 @@ async def change_password(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Enlace no valido para el cambio de la contraseña")    
     
     password = await user_service.change_password(email = verify_token.get("email"), new_password=user_data.new_password)
+   
+    return UserChangePasswordResponse(status="success", message="Cambio de contraseña exitoso!", is_change_password=password)
 
-    return password
 
-
-@router.put("/update_user", response_model=UserResponse)
+@router.put("/update_user", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def update_user(
     user_data: UserUpdateRequest, user_service: UserService = Depends(get_user_service)
 ):
@@ -58,7 +58,7 @@ async def update_user(
     update_user = await user_service.update_user(user_data.id, update_payload_dict)
 
     update_user_dict = asdict(update_user)
-    print(update_user_dict)
+
     return UserResponse.model_validate(update_user_dict)
 
 @router.get("/user_all", response_model= UserResponseList, status_code=status.HTTP_200_OK)
@@ -69,10 +69,8 @@ async def get_user(
 ):
     user_all, total = await user_service.list_users(page=page, per_page=per_page)
 
-
     user_all_validate = [UserResponse.model_validate(asdict(user)) for user in user_all]
 
-    
     total_pages = (total + per_page - 1) // per_page
     pagination = {
         "total": total,

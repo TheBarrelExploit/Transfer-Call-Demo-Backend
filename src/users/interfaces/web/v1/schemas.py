@@ -72,6 +72,13 @@ class UserChangePassword(BaseModel):
     secret_token: str
     new_password: str
 
+class UserChangePasswordResponse(BaseModel):
+    """
+    Response change password
+    """
+    status:str 
+    message:str
+    is_change_password:bool
 
 class UserResponse(BaseModel):
     """

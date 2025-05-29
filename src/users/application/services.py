@@ -87,10 +87,7 @@ class UserService(UserServiceUser):
                     f"Email {data_user['email']} already exists"
                 )
 
-        updated_data = {**{k: v for k, v in data_user.items() if k != "password"}}
-
-        if "password" in data_user:
-            updated_data["password"] = self._hash_password(data_user["password"])
+        updated_data = {**{k: v for k, v in data_user.items()}}
 
         return await self.repository.update(id, updated_data)
 
