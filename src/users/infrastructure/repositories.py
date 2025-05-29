@@ -34,9 +34,9 @@ class DBUserRepository(UserRepository):
         user._id = str(result.inserted_id)
         return user
 
-    async def update(self, id: str, data: dict) -> bool:
+    async def update(self, email: str, data: dict) -> bool:
         await self.collection.update_one(
-            {"_id": ObjectId(id)},
+            {"email": email},
             {"$set": {**data, "updated_at": datetime.now(timezone.utc)}},
         )
         return True

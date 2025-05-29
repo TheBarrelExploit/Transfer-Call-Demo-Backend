@@ -114,7 +114,7 @@ class UserService(UserServiceUser):
         return await self.repository.update(
             email,
             {
-                "password": self._hash_password(new_password),
+                "password_hash": self._hash_password(new_password),
                 "updated_at": datetime.now(timezone.utc),
             },
         )
