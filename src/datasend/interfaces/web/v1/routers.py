@@ -12,16 +12,27 @@ from fastapi.security import HTTPAuthorizationCredentials,HTTPBearer
 from src.datasend.infrastructure.email import send_email_background, EmailSchema
 from src.users.domain.ports import UserRepository
 from src.auth.interfaces.web.v1.dependencies import get_current_user, get_user_repository
+from src.auth.infrastructure.security import create_access_token
 from tempfile import NamedTemporaryFile
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from datetime import datetime, timedelta
 from jinja2 import Template
 from pathlib import Path
+
 import logging
 import os
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/emailsend", tags=["emailsend"])
 security = HTTPBearer()
+
+class PasswordRecoveryRequest(BaseModel):
+    email: EmailStr
+
+class PasswordRecoveryResponse(BaseModel):
+    message: str
+    success: bool
+    token: str 
 
 async def template_email(template_name: str, context:dict)->str:
     try:
@@ -140,3 +151,66 @@ async def send_report_email_endpoint(
         )
 
 
+@router.post("/password-recovery", )
+async def password_recovery(
+    background_tasks: BackgroundTasks,
+    request: PasswordRecoveryRequest,
+    user_repo: UserRepository = Depends(get_user_repository)
+):
+    #Enviar un correo con instrucciones para recuperar la contraseña
+    try:
+        #existe el email en la base de datos?
+        user = await user_repo.find_by_email(request.email)
+        if not user:
+            logger.warning(f"Intento de recuperacion para email no registrado:{request.email}")
+            return {
+                "message": "Si el email esta registrado, recibira un correo con instrucciones",
+                "succes": True
+            }
+        
+        token_data = {
+            "id": str(user.id),
+            "sub":user.username,
+            "email": user.email,
+            "purpose": "password_reset"
+        }
+        
+        access_token = create_access_token(
+            data=token_data,
+            expires_delta=timedelta(minutes=60)
+        )
+        
+        #preparar el enlace de recuperacion
+        recovery_url = f"http://127.0.0.1:5500/Transfer-Call-Demo/Transfer-Call-Demo-FrontEnd/html/password.html?token={access_token}"
+
+        #renderizar el template del email
+        rendered_body = await template_email(
+            template_name= "template_password_recovery.html",
+            context = {
+                "username": user.username,
+                "recovery_url": recovery_url,
+            }
+        )
+        
+        #preparar y enviar el email
+        email_data = EmailSchema(
+            email_to=[request.email],
+            subject="Cambio de contraseña",
+            body= rendered_body,
+            attachments= []
+        )
+        
+        await send_email_background(background_tasks, email_data)
+        
+        logger.info(f"Email de cambio de contraseña enviado a: {request.email}")
+        
+        return{
+            "message": "Si el email esta registrado, recibiras un correo con instrucciones",
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Error en password_recovery: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Error al procesar la solicitud de recuperacion de contraseña"
+        )
