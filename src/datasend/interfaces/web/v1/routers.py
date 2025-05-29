@@ -153,7 +153,8 @@ async def password_recovery(
         # Siempre devolver el mismo mensaje por seguridad
         return {
             "message": "Si el email está registrado, recibirás un correo con instrucciones",
-            "success": True
+            "status": "success",
+            "is_successs": success
         }
         
     except Exception as e:

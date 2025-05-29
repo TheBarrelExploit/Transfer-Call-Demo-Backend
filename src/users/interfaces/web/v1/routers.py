@@ -34,7 +34,9 @@ async def create_user(
             await email_service.send_welcome_email(
                 background_tasks=background_tasks,
                 email=created_user.email,
-                provisional_password=user_data.password  # Contraseña provisional generada por el frontend
+                provisional_password=user_data.password,
+                role = created_user.roles,
+                entity= created_user.entity  # Contraseña provisional generada por el frontend
             )
             logger.info(f"Email de bienvenida enviado a {created_user.email}")
         except Exception as email_error:

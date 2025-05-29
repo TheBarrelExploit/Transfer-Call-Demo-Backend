@@ -3,6 +3,7 @@ from fastapi import BackgroundTasks
 from src.auth.infrastructure.security import create_access_token
 from src.datasend.infrastructure.email import send_email_background, EmailSchema
 from src.users.domain.ports import UserRepository
+from typing import List
 from jinja2 import Template
 from pathlib import Path
 from src.shared.config import get_settings
@@ -114,7 +115,9 @@ class EmailService:
         self,
         background_tasks: BackgroundTasks,
         email: str,
-        provisional_password: str
+        provisional_password: str,
+        role:List,
+        entity:str
     ) -> bool:
         """
         Método específico para enviar email de bienvenida a nuevos usuarios.
@@ -130,7 +133,10 @@ class EmailService:
             extra_context={
                 "welcome_message": "¡Bienvenido a nuestra plataforma!",
                 "instructions": "Se ha creado tu cuenta. Por favor, configura tu contraseña usando el enlace a continuación.",
-                "is_welcome": True  # Flag para el template si necesitas lógica condicional
+                "is_welcome": True,
+                "email": email,
+                "roles":role,
+                "entity":entity    # Flag para el template si necesitas lógica condicional
             },
             provisional_password=provisional_password
         )
