@@ -119,7 +119,7 @@ def process_call_data(xml_path: str) -> Iterator[dict]:
 
     for key, data in egress.items():
         egress_data_start = data.get("start", {})
-        #egress_data_end = data.get("end", {})
+        # egress_data_end = data.get("end", {})
         ingress_data = ingress.get(key, {})
         ingress_data_start = ingress_data.get("start", {})
         ingress_data_end = ingress_data.get("end", {})
@@ -146,7 +146,6 @@ def process_call_data(xml_path: str) -> Iterator[dict]:
             )
             connect_number = connect_info["number"]
             entity_connect = connect_info["entity"]
-            
 
             start_time: str = ingress_data_start.get("startTime")
             end_time: str = ingress_data_start.get("recTime")
@@ -170,8 +169,8 @@ def process_call_data(xml_path: str) -> Iterator[dict]:
                     "routing_id": route_idx,
                     "erorr_code": error_code,
                     "record_id": record_id,
-                    "unique_call_id_ingress":unique_call_id_ingress,
-                    "unique_call_id_egress":unique_call_id_egress
+                    "unique_call_id_ingress": unique_call_id_ingress,
+                    "unique_call_id_egress": unique_call_id_egress,
                 }
                 yield call_record
         else:
@@ -187,10 +186,10 @@ def process_call_data(xml_path: str) -> Iterator[dict]:
                 print(route_idx)
                 feature = routing_data.get("routingReason")
                 info = routing_data.get("routingDest")
-                
+
                 connected_number = None
                 entity_connected = None
-                
+
                 if info:
                     connect_info = parse_routing_dest(info)
                     connected_number = connect_info["number"]
@@ -213,8 +212,8 @@ def process_call_data(xml_path: str) -> Iterator[dict]:
                     "entity_zone": subscriber_fqdn,
                     "routing_id": route_idx,
                     "record_id": record_id,
-                    "unique_call_id_ingress":unique_call_id_ingress,
-                    "unique_call_id_egress":unique_call_id_egress
+                    "unique_call_id_ingress": unique_call_id_ingress,
+                    "unique_call_id_egress": unique_call_id_egress,
                 }
                 yield call_record
 
@@ -302,10 +301,11 @@ def save_to_mongodb(
         print(f"Error al guardar en MongoDB: {e}")
         return 0
 
-def main(xml_path, collection_name='registros', batch_size=1000):
+
+def main(xml_path, collection_name="registros", batch_size=1000):
     """
     Función principal que procesa el archivo XML y guarda los resultados en MongoDB
-    
+
     Args:
         xml_path: Ruta al archivo XML a procesar
         collection_name: Nombre de la colección en MongoDB
@@ -314,25 +314,26 @@ def main(xml_path, collection_name='registros', batch_size=1000):
     try:
         # Medir tiempo de ejecución
         start_time = time.time()
-        
+
         # Procesar y guardar datos usando el generador
         record_count = save_to_mongodb(
-            process_call_data(xml_path), 
+            process_call_data(xml_path),
             collection_name=collection_name,
-            batch_size=batch_size
+            batch_size=batch_size,
         )
-        
+
         elapsed_time = time.time() - start_time
         print(f"Procesamiento completado en {elapsed_time:.2f} segundos")
-        print(f"Velocidad: {record_count/elapsed_time:.2f} registros/segundo")
+        print(f"Velocidad: {record_count / elapsed_time:.2f} registros/segundo")
     except Exception as e:
         print(f"Error en el procesamiento: {e}")
         import traceback
+
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     total_start_time = time.time()
-    main(root, "llamadas") 
+    main(root, "llamadas")
     total_elapsed_time = time.time() - total_start_time
     print(f"Tiempo total de ejecución del programa:{total_elapsed_time:.2f}")
-

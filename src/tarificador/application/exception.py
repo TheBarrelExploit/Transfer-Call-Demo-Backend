@@ -1,0 +1,2 @@
+class CallNotFoundException(Exception):
+    pass

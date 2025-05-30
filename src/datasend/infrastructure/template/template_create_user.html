@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bienvenido a la Plataforma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #f4f6f8;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 {
+            color: #2a8fd4;
+        }
+        .user-info {
+            background-color: #f0f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .user-info p {
+            margin: 8px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .logo {
+            margin-top: 20px;
+            max-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Bienvenido/a a la Plataforma</h2>
+        <p>Hola <strong>{{username}}</strong>,</p>
+
+        <p>Te damos la bienvenida a nuestra plataforma. Tu cuenta ha sido creada exitosamente por el administrador.</p>
+
+        <div class="user-info">
+            <p><strong>Usuario:</strong> {{username}}</p>
+            <p><strong>Correo:</strong> {{email}}</p>
+            <p><strong>Entidad:</strong> {{entity}}</p>
+            <p><strong>Rol asignado:</strong> {{roles}}</p>
+            <p><strong>Contraseña temporal:</strong> {{provisional_password}}</p>
+        </div>
+
+        <p>Ya puedes iniciar sesión con las credenciales asignadas. Si necesitas asistencia, no dudes en contactarnos.</p>
+        <p>Este enlace expirará en {{ expiration_minutes // 60 }} horas.</p>
+
+        <p>Saludos cordiales,<br>
+        <strong>El equipo de soporte</strong></p>
+
+        <div class="footer">
+            <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+            <img src="login.png" alt="Logo del Proyecto" class="logo">
+        </div>
+    </div>
+</body>
+</html>
