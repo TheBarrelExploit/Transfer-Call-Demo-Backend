@@ -108,7 +108,7 @@ class UserService(UserServiceUser):
         if not user:
             raise UserNotFoundException(f"User with email {email} not found")
 
-        return await self.repository.update(
+        return await self.repository.change_password(
             email,
             {
                 "password_hash": self._hash_password(new_password),

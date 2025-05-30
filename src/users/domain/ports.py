@@ -30,15 +30,19 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, id: str, data: dict) -> bool:
+    async def update(self, id: str, data: dict) -> UserBase:
         """update a user"""
         pass
 
     @abstractmethod
     async def delete(self, id: str) -> bool:
-        """Delete a user by their ID"""
+        """Delete a user by their ID""" 
         pass
 
     @abstractmethod
     async def list(self, page: int = 0, per_page: int = 100) -> List[UserBase]:
+        pass
+
+    @abstractmethod
+    async def change_password(self, email:str, data:dict) -> bool:
         pass

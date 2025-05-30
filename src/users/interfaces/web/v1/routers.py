@@ -78,7 +78,6 @@ async def update_user(
         )
 
     update_user = await user_service.update_user(user_data.id, update_payload_dict)
-
     update_user_dict = asdict(update_user)
 
     return UserResponse.model_validate(update_user_dict)

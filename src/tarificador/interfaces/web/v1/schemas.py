@@ -12,6 +12,22 @@ class CallRequest(BaseModel):
     kind_of_call: List[str] = None
     class_call: List[str] = None
 
+class CallGeneralReportRequest(BaseModel):
+    originational_number:str
+    entity:str
+    start_date: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+
+class CallGeneralNumberReport(BaseModel):
+    entity:str=Field(validation_alias=AliasPath('Entidad'))
+    originational_number:str=Field(validation_alias=AliasPath('Numero'))
+    total_call:str=Field(validation_alias=AliasPath('Numero'))
+    any_minute:str = Field(validation_alias=AliasPath('Cobro total'))
+    total_to_pay:str=Field(validation_alias=AliasPath('Numero'))
+
+
+class CallGeneralNumberResponse(BaseModel):
+    data:List[CallGeneralNumberReport]
 
 class CallGeneralReport(BaseModel):
     dialed_entity:str=Field(validation_alias=AliasPath('Entidad'))

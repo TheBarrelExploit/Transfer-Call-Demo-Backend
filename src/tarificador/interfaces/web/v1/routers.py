@@ -7,11 +7,12 @@ from src.tarificador.infrastructure.dependencies import (
     get_user_service,
     get_current_payload,
 )
-from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse, CallRequest, CallGeneralReport, CallGeneralReportResponse
+from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse, CallRequest, CallGeneralReport, CallGeneralReportResponse, CallGeneralNumberResponse, CallGeneralReportRequest
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
 )
+import polars as pl
 
 router = APIRouter(prefix="/v1/calls", tags=["calls"])
 security = HTTPBearer()
@@ -221,6 +222,18 @@ async def general_report_all(
     general_report_data_all_validate = [CallGeneralReport.model_validate(report) for report in general_report_data_all]
 
     return CallGeneralReportResponse(data = general_report_data_all_validate)
+
+@router.post("/report_number", status_code = status.HTTP_200_OK)
+async def general_report_number(
+    call_data: CallGeneralReportRequest,
+    call_service: CallService = Depends(get_user_service)
+):
+    print(call_data.originational_number)
+    sheet_name = f"number"
+
+    return {"ok"}
+
+
     
 
     
