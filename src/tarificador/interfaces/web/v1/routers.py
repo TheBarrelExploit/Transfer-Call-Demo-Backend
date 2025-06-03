@@ -206,69 +206,104 @@ async def call_by_filter(
 @router.get("/general_report",response_model= CallGeneralReportResponse, status_code = status.HTTP_200_OK)
 async def general_report(   
     call_service: CallService = Depends(get_user_service),
-    entity: str = Query("Entidad",ge="Entidad", description="Nombre de la entidad")
+    entity: str = Query("Entidad",ge="Entidad", description="Nombre de la entidad"),
+    start_date: datetime = Query("Fecha inicio", description="Fecha de inicio"),
+    end_date: datetime = Query("Fecha final", description="Fecha final"),
+
 ):
     sheet_name = f"general{entity}"
-    general_report_data = await call_service.get_report_general(sheet_name=sheet_name)
+    print(start_date, end_date, sheet_name)
+    conditions = []
+
+    fecha_inicio = datetime.combine(start_date, datetime.min.time())
+    fecha_fin = datetime.combine(end_date, datetime.max.time())
+
+    conditions.append(pl.col("Fecha inicio") >= fecha_inicio)
+    conditions.append(pl.col("Fecha inicio") <= fecha_fin)
+
+    general_report_data = await call_service.get_report_general(sheet_name=sheet_name, admin =False,  filter=True, data_filter=conditions )
     general_report_data_validate = [CallGeneralReport.model_validate(report) for report in general_report_data]
 
     return CallGeneralReportResponse(data = general_report_data_validate)
 
 @router.get("/general_report_all", response_model=CallGeneralReportResponse,status_code=status.HTTP_200_OK)
 async def general_report_all(
-    call_service: CallService = Depends(get_user_service)
+    call_service: CallService = Depends(get_user_service),
+    start_date: datetime = Query("Fecha inicio", description="Fecha de inicio"),
+    end_date: datetime = Query("Fecha final", description="Fecha final"),
 ):
     sheet_name = f"adminGeneralReporte"
-    general_report_data_all = await call_service.get_report_general(sheet_name=sheet_name, admin =True )
+    conditions = []
+
+    fecha_inicio = datetime.combine(start_date, datetime.min.time())
+    fecha_fin = datetime.combine(end_date, datetime.max.time())
+
+    conditions.append(pl.col("Fecha inicio") >= fecha_inicio)
+    conditions.append(pl.col("Fecha inicio") <= fecha_fin)
+
+    general_report_data_all = await call_service.get_report_general(sheet_name=sheet_name, admin =False,  filter=True, data_filter=conditions )
     general_report_data_all_validate = [CallGeneralReport.model_validate(report) for report in general_report_data_all]
 
     return CallGeneralReportResponse(data = general_report_data_all_validate)
 
-@router.post("/report_number", response_model=CallGeneralNumberResponse ,status_code = status.HTTP_200_OK)
+@router.post("/report_number", response_model=CallGeneralNumberResponse, status_code=status.HTTP_200_OK)
 async def general_report_number(
     call_data: CallGeneralReportRequest,
     call_service: CallService = Depends(get_user_service)
 ):
-    if call_data.start_date and call_data.end_time and call_data.start_date > call_data.end_time:
+    if call_data.start_date and call_data.end_date and call_data.start_date > call_data.end_date:
         raise HTTPException(status_code=400, detail="La fecha de inicio no puede ser mayor que la fecha final")
-    sheet_name = f"number"
-
+    
+    sheet_name = "number"
+    entity = ["Entidad1", "Entidad2"]
     conditions = []
 
+    # Filtro por fechas - SIMPLIFICADO Y CORRECTO
     if call_data.start_date is not None:
-        fecha_inicio_dt = datetime.combine(call_data.start_date, datetime.min.time())
-        fecha_inicio_dt = pl.lit(fecha_inicio_dt).cast(pl.Datetime("ms"))
-    
-    if call_data.end_time is not None:
-        fecha_fin_dt = datetime.combine(call_data.end_time, datetime.max.time())
-        fecha_fin_dt = pl.lit(fecha_fin_dt).cast(pl.Datetime("ms"))
-    
-    # Filtro por rango de fechas
-# Filtro por rango de fechas (usando solo Fecha inicio según tu ejemplo)
-    if call_data.start_date is not None and call_data.end_time is not None:
-        conditions.append(
-            (pl.col("Fecha inicio") >= fecha_inicio_dt) & 
-            (pl.col("Fecha inicio") <= fecha_fin_dt)
-        )
-    elif call_data.start_date is not None:
-        conditions.append(pl.col("Fecha inicio") >= fecha_inicio_dt)
-    elif call_data.end_time is not None:
-        conditions.append(pl.col("Fecha inicio") <= fecha_fin_dt)
-    
+        # Crear datetime al inicio del día
+        fecha_inicio = datetime.combine(call_data.start_date, datetime.min.time())
+        conditions.append(pl.col("Fecha inicio") >= fecha_inicio)
+        print(f"DEBUG - Filtro fecha inicio: >= {fecha_inicio}")
+        
+    if call_data.end_date is not None:
+        # Crear datetime al final del día
+        fecha_fin = datetime.combine(call_data.end_date, datetime.max.time())
+        conditions.append(pl.col("Fecha inicio") <= fecha_fin)
+        print(f"DEBUG - Filtro fecha fin: <= {fecha_fin}")
+
     # Otros filtros
     if call_data.originational_number is not None:
         conditions.append(pl.col("Numero") == call_data.originational_number)
     
     if call_data.entity is not None:
-        conditions.append(pl.col("Entidad") == call_data.entity)
-    
-    print(call_data.entity)
+        entity_total = call_data.entity
+        if call_data.entity[0] == "todas":
+            entity_total = entity
+        conditions.append(pl.col("Entidad").is_in(entity_total))
 
-    general_report_number = await call_service.get_report_general(sheet_name=sheet_name,admin=False,filter=True,data_filter=conditions)
+    print(f"DEBUG - Total condiciones aplicadas: {len(conditions)}")
 
-    general_report_number_validate = [CallGeneralNumberReport.model_validate(general) for general in general_report_number]
+    # Obtener datos filtrados
+    general_report_number = await call_service.get_report_general(
+        sheet_name=sheet_name,
+        admin=False,
+        filter=True,
+        data_filter=conditions
+    )
 
-    return CallGeneralNumberResponse(data =general_report_number_validate)
+    print(f"DEBUG - Registros obtenidos: {len(general_report_number) if general_report_number else 0}")
+
+    # Si no hay datos, retornar lista vacía
+    if not general_report_number:
+        return CallGeneralNumberResponse(data=[])
+
+    # Validar datos
+    general_report_number_validate = [
+        CallGeneralNumberReport.model_validate(general) 
+        for general in general_report_number
+    ]
+
+    return CallGeneralNumberResponse(data=general_report_number_validate)
 
 
     

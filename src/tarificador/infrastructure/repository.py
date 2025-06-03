@@ -84,7 +84,8 @@ class CallRepository(CallRepositoryDomain):
         if filter:
             df = self.dataframe.get(sheet_name)
             data = df.filter(pl.all_horizontal(*data_filter))
-            data = data.with_columns(pl.col("Cant minutos").dt.time())
+            if "Cant minutos" in data.columns:
+                data = data.with_columns(pl.col("Cant minutos").dt.time())
             return data.to_dicts()
    
         return self.dataframe.get(sheet_name).to_dicts()

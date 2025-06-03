@@ -11,15 +11,16 @@ class CallRequest(BaseModel):
     type_of_call: List[str] = None
     kind_of_call: List[str] = None
     class_call: List[str] = None
+    dialed_entity:List[str] = None
 
 class CallGeneralReportRequest(BaseModel):
     originational_number:Optional[int] = None
-    entity:str
+    entity:List[str]
     start_date: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 class CallGeneralNumberReport(BaseModel):
-    entity:str=Field(validation_alias=AliasPath('Entidad'))
+    dialed_entity:str=Field(validation_alias=AliasPath('Entidad'))
     originational_number:int=Field(validation_alias=AliasPath('Numero'))
     total_call:int=Field(validation_alias=AliasPath('Cant llamadas'))
     any_minutes:time = Field(validation_alias=AliasPath('Cant minutos'))

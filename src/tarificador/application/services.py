@@ -86,7 +86,7 @@ class CallService(CallInterfaces):
             })
 
             # 3. Campos con $in (para listas)
-            list_fields = ["type_of_call", "kind_of_call", "class_call"]
+            list_fields = ["type_of_call", "kind_of_call", "class_call", "dialed_entity"]
             query.update({
                 field: {"$in": value} for field in list_fields
                 if (value := getattr(data, field))
