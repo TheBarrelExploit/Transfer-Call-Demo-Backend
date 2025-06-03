@@ -10,6 +10,7 @@ from src.auth.interfaces.web.v1.routers import router as auth_router_v1
 from src.datasend.interfaces.web.v1.routers import router as emailsend_router_v1
 from src.tarificador.interfaces.web.v1.routers import router as call_router_v1
 from src.prices.interface.web.v1.routers import router as price_router_v1
+from src.dashboard.interfaces.web.v1.routers import router as dashboard_router_v1
 from src.auth.infrastructure.security import get_password_hash
 from pymongo import MongoClient
 from dataclasses import asdict
@@ -73,6 +74,7 @@ async def lifespan(app: FastAPI):
     await mongo.close()
     apscheduler.shutdowm()
     sync_mongo_client.close()
+    sheet.clear()
 
 
 app = FastAPI(
@@ -120,6 +122,7 @@ app.include_router(users_router_v1, prefix="/api")
 app.include_router(call_router_v1, prefix="/api")
 app.include_router(price_router_v1, prefix="/api")
 app.include_router(emailsend_router_v1, prefix="/api")
+app.include_router(dashboard_router_v1, prefix="/api")
 
 
 @app.get("/")
