@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Security, Query
 from dataclasses import asdict
 from typing import Optional
+from datetime import datetime
 from src.tarificador.application.services import CallService
 from src.tarificador.application.exception import CallNotFoundException
 from src.tarificador.infrastructure.dependencies import (
     get_user_service,
     get_current_payload,
 )
-from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse, CallRequest, CallGeneralReport, CallGeneralReportResponse, CallGeneralNumberResponse, CallGeneralReportRequest
+from src.tarificador.interfaces.web.v1.schemas import CallResponse, CallBaseResponse, CallRequest, CallGeneralReport, CallGeneralReportResponse, CallGeneralNumberResponse, CallGeneralReportRequest, CallGeneralNumberReport
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
@@ -223,15 +224,51 @@ async def general_report_all(
 
     return CallGeneralReportResponse(data = general_report_data_all_validate)
 
-@router.post("/report_number", status_code = status.HTTP_200_OK)
+@router.post("/report_number", response_model=CallGeneralNumberResponse ,status_code = status.HTTP_200_OK)
 async def general_report_number(
     call_data: CallGeneralReportRequest,
     call_service: CallService = Depends(get_user_service)
 ):
-    print(call_data.originational_number)
+    if call_data.start_date and call_data.end_time and call_data.start_date > call_data.end_time:
+        raise HTTPException(status_code=400, detail="La fecha de inicio no puede ser mayor que la fecha final")
     sheet_name = f"number"
 
-    return {"ok"}
+    conditions = []
+
+    if call_data.start_date is not None:
+        fecha_inicio_dt = datetime.combine(call_data.start_date, datetime.min.time())
+        fecha_inicio_dt = pl.lit(fecha_inicio_dt).cast(pl.Datetime("ms"))
+    
+    if call_data.end_time is not None:
+        fecha_fin_dt = datetime.combine(call_data.end_time, datetime.max.time())
+        fecha_fin_dt = pl.lit(fecha_fin_dt).cast(pl.Datetime("ms"))
+    
+    # Filtro por rango de fechas
+# Filtro por rango de fechas (usando solo Fecha inicio según tu ejemplo)
+    if call_data.start_date is not None and call_data.end_time is not None:
+        conditions.append(
+            (pl.col("Fecha inicio") >= fecha_inicio_dt) & 
+            (pl.col("Fecha inicio") <= fecha_fin_dt)
+        )
+    elif call_data.start_date is not None:
+        conditions.append(pl.col("Fecha inicio") >= fecha_inicio_dt)
+    elif call_data.end_time is not None:
+        conditions.append(pl.col("Fecha inicio") <= fecha_fin_dt)
+    
+    # Otros filtros
+    if call_data.originational_number is not None:
+        conditions.append(pl.col("Numero") == call_data.originational_number)
+    
+    if call_data.entity is not None:
+        conditions.append(pl.col("Entidad") == call_data.entity)
+    
+    print(call_data.entity)
+
+    general_report_number = await call_service.get_report_general(sheet_name=sheet_name,admin=False,filter=True,data_filter=conditions)
+
+    general_report_number_validate = [CallGeneralNumberReport.model_validate(general) for general in general_report_number]
+
+    return CallGeneralNumberResponse(data =general_report_number_validate)
 
 
     

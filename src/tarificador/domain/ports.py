@@ -37,5 +37,5 @@ class CallRepositoryDomain(ABC):
         pass
 
     @abstractmethod
-    async def read_report(self,sheet_name: Optional[str]=None, admin: Optional[bool] = False) -> List[Dict]:
+    async def read_report(self,sheet_name: Optional[str]=None, admin: Optional[bool] = False, filter = False, data_filter = []) -> List[Dict]:
         pass

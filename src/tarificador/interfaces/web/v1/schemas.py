@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, AliasPath
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, time
 
 
 class CallRequest(BaseModel):
@@ -13,17 +13,17 @@ class CallRequest(BaseModel):
     class_call: List[str] = None
 
 class CallGeneralReportRequest(BaseModel):
-    originational_number:str
+    originational_number:Optional[int] = None
     entity:str
     start_date: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
 class CallGeneralNumberReport(BaseModel):
     entity:str=Field(validation_alias=AliasPath('Entidad'))
-    originational_number:str=Field(validation_alias=AliasPath('Numero'))
-    total_call:str=Field(validation_alias=AliasPath('Numero'))
-    any_minute:str = Field(validation_alias=AliasPath('Cobro total'))
-    total_to_pay:str=Field(validation_alias=AliasPath('Numero'))
+    originational_number:int=Field(validation_alias=AliasPath('Numero'))
+    total_call:int=Field(validation_alias=AliasPath('Cant llamadas'))
+    any_minutes:time = Field(validation_alias=AliasPath('Cant minutos'))
+    total_to_pay:float=Field(validation_alias=AliasPath('Cobro total'))
 
 
 class CallGeneralNumberResponse(BaseModel):
