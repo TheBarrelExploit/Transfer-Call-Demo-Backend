@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from ..domain.ports import DashboardPort
 from typing import Dict
 import polars as pl

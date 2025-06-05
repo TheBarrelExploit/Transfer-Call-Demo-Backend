@@ -1,5 +1,8 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from pydantic import BaseModel, Field, AliasPath
-
 
 class ResponseData(BaseModel):
     total_call:int=Field(validation_alias=AliasPath('Total'))
