@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Any
 from ..domain.models import PriceBase

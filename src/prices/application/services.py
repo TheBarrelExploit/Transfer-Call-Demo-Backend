@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from ..application.interfaces import PricesInterfaces
 from ..application.exception import PriceNotFoundException, PriceNotSchedulerException, PriceNotCreateException
 from ..domain.models import PriceBase

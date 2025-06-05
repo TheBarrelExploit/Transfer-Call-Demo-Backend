@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from fastapi import APIRouter, Depends, HTTPException, status, Security, Query
 from dataclasses import asdict
 from typing import Optional

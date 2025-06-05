@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.executors.asyncio import AsyncIOExecutor

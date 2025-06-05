@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 import os
 import gc
 import time
