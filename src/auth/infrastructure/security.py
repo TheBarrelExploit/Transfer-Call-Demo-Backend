@@ -1,6 +1,9 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from src.shared.config import get_settings

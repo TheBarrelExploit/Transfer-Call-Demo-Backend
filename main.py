@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 import subprocess
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

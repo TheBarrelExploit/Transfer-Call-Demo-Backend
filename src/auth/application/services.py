@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 import logging
 from datetime import timedelta
 from src.shared.config import get_settings
