@@ -36,7 +36,8 @@ async def create_user(
                 email=created_user.email,
                 provisional_password=user_data.password,
                 role = created_user.roles,
-                entity= created_user.entity  # Contraseña provisional generada por el frontend
+                entity= created_user.entity,
+                logo = created_user.logo  # Contraseña provisional generada por el frontend
             )
             logger.info(f"Email de bienvenida enviado a {created_user.email}")
         except Exception as email_error:
@@ -70,7 +71,7 @@ async def change_password(
 async def update_user(
     user_data: UserUpdateRequest, user_service: UserService = Depends(get_user_service)
 ):
-    update_payload_dict = user_data.model_dump(exclude_unset=True, exclude={"id"})
+    update_payload_dict = user_data.model_dump(exclude_none=True, exclude_unset= True, exclude={"id"})
     if not update_payload_dict:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

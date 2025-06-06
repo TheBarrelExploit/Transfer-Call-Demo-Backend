@@ -89,6 +89,7 @@ class EmailService:
                 "recovery_url": f"{self.base_url}/password.html?token={access_token}",  # Alias para compatibilidad
                 "expiration_minutes": expiration_minutes,
                 "provisional_password": provisional_password,
+                "logo":user.logo,
                 **(extra_context or {})
             }
             
@@ -121,12 +122,17 @@ class EmailService:
         email: str,
         provisional_password: str,
         role:List,
-        entity:str
+        entity:str,
+        logo:str
     ) -> bool:
         """
         Método específico para enviar email de bienvenida a nuevos usuarios.
         Utiliza el mismo template que password recovery pero con contexto de bienvenida.
         """
+        roles = {
+            "user":"Administrador",
+            "admin":"Super Usuario"
+        }
         return await self.send_token_email(
             background_tasks=background_tasks,
             email=email,
@@ -139,8 +145,9 @@ class EmailService:
                 "instructions": "Se ha creado tu cuenta. Por favor, configura tu contraseña usando el enlace a continuación.",
                 "is_welcome": True,
                 "email": email,
-                "roles":role,
-                "entity":entity    # Flag para el template si necesitas lógica condicional
+                "roles":roles.get(role[0], "Error rol"),
+                "entity":entity,
+                "logo":logo        # Flag para el template si necesitas lógica condicional
             },
             provisional_password=provisional_password
         )
