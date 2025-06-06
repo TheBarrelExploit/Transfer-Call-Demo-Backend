@@ -1,14 +1,18 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from ..domain.ports import CallRepositoryDomain
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..domain.models import CallBase
 from typing import List, Dict, Any
 from datetime import datetime
-from polars import DataFrame
+import polars as pl
 
 
 
 class CallRepository(CallRepositoryDomain):
-    def __init__(self, collection: AsyncIOMotorCollection, dataframe:Dict[str, DataFrame]):
+    def __init__(self, collection: AsyncIOMotorCollection, dataframe:Dict[str, pl.DataFrame]):
         self.collection = collection
         self.dataframe = dataframe
 
@@ -77,9 +81,16 @@ class CallRepository(CallRepositoryDomain):
             data_result.append(CallBase.from_mongo(mongo_data))
         return data_result
     
-    async def read_report(self, sheet_name = None, admin = False) ->List[Dict[str, Any]]:
+    async def read_report(self, sheet_name = None, admin = False, filter = False, data_filter = []) ->List[Dict[str, Any]]:
         if admin:  
             return self.dataframe.get(sheet_name).to_dicts()
         
+        if filter:
+            df = self.dataframe.get(sheet_name)
+            data = df.filter(pl.all_horizontal(*data_filter))
+            if "Cant minutos" in data.columns:
+                data = data.with_columns(pl.col("Cant minutos").dt.time())
+            return data.to_dicts()
+   
         return self.dataframe.get(sheet_name).to_dicts()
         

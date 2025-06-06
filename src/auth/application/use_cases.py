@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from jose import jwt, JWTError

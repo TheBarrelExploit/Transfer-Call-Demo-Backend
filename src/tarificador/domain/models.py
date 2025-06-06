@@ -1,3 +1,8 @@
+
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from dataclasses import dataclass, field
 from typing import Optional, Any
 from enum import Enum
@@ -52,6 +57,7 @@ class CallBase:
     time_spent_in_call: str = "00:00:00"
     any_minutes: int = 0
     total_to_pay: int = 0
+    error_code:int = 0
 
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)
 

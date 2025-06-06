@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from typing import List, Dict, Any
 from datetime import datetime
 from ..domain.models import CallBase
@@ -86,15 +90,15 @@ class CallService(CallInterfaces):
             })
 
             # 3. Campos con $in (para listas)
-            list_fields = ["type_of_call", "kind_of_call", "class_call"]
+            list_fields = ["type_of_call", "kind_of_call", "class_call", "dialed_entity"]
             query.update({
                 field: {"$in": value} for field in list_fields
                 if (value := getattr(data, field))
             })
             return await self.call_repository.find_call_by_filter(query)
     
-    async def get_report_general(self, sheet_name, admin = False):
-        return await self.call_repository.read_report(sheet_name=sheet_name, admin=admin)
+    async def get_report_general(self, sheet_name, admin = False, filter = False, data_filter = []):
+        return await self.call_repository.read_report(sheet_name=sheet_name, admin=admin,filter=filter, data_filter=data_filter)
         
 
             

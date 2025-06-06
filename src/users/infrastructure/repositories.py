@@ -36,10 +36,18 @@ class DBUserRepository(UserRepository):
 
     async def update(self, email: str, data: dict) -> bool:
         await self.collection.update_one(
+            {"_id": ObjectId(email)},
+            {"$set": {**data, "updated_at": datetime.now(timezone.utc)}},
+        )
+        return await self.find_by_id(id =email)
+    
+    async def change_password(self, email:str, data:dict) -> bool:
+        result = await self.collection.update_one(
             {"email": email},
             {"$set": {**data, "updated_at": datetime.now(timezone.utc)}},
         )
-        return True
+
+        return result.modified_count> 0
 
     async def delete(self, id:str) -> None:
         result = await self.collection.delete_one({"_id": ObjectId(id)})

@@ -1,6 +1,10 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from pydantic import BaseModel, Field, AliasPath
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, time
 
 
 class CallRequest(BaseModel):
@@ -11,7 +15,24 @@ class CallRequest(BaseModel):
     type_of_call: List[str] = None
     kind_of_call: List[str] = None
     class_call: List[str] = None
+    dialed_entity:List[str] = None
 
+class CallGeneralReportRequest(BaseModel):
+    originational_number:Optional[int] = None
+    entity:List[str]
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+class CallGeneralNumberReport(BaseModel):
+    dialed_entity:str=Field(validation_alias=AliasPath('Entidad'))
+    originational_number:int=Field(validation_alias=AliasPath('Numero'))
+    total_call:int=Field(validation_alias=AliasPath('Cant llamadas'))
+    any_minutes:time = Field(validation_alias=AliasPath('Cant minutos'))
+    total_to_pay:float=Field(validation_alias=AliasPath('Cobro total'))
+
+
+class CallGeneralNumberResponse(BaseModel):
+    data:List[CallGeneralNumberReport]
 
 class CallGeneralReport(BaseModel):
     dialed_entity:str=Field(validation_alias=AliasPath('Entidad'))

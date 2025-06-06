@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 

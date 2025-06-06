@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama, Paola Andrea Morales Rodríguez
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from .models import CallBase
@@ -37,5 +41,5 @@ class CallRepositoryDomain(ABC):
         pass
 
     @abstractmethod
-    async def read_report(self,sheet_name: Optional[str]=None, admin: Optional[bool] = False) -> List[Dict]:
+    async def read_report(self,sheet_name: Optional[str]=None, admin: Optional[bool] = False, filter = False, data_filter = []) -> List[Dict]:
         pass

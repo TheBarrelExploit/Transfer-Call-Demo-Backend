@@ -1,3 +1,7 @@
+# Autores: Denuar Andres Ramos Lezama
+# Fecha: Junio 2025
+# Proyecto: Demo Tarificador
+# Derechos reservados
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Dict
