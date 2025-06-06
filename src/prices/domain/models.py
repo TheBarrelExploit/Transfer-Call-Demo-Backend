@@ -2,7 +2,8 @@
 # Autores: Denuar Andres Ramos Lezama
 # Fecha: Junio 2025
 # Proyecto: Demo Tarificador
-# Derechos reservadosfrom dataclasses import dataclass, field
+# Derechos reservados
+from dataclasses import dataclass, field
 from bson import ObjectId
 from enum import Enum
 from typing import Optional, Any
