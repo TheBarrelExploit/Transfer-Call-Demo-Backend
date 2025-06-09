@@ -91,6 +91,7 @@ app = FastAPI(
         "usePkceWithAuthorizationCodeGrant": True,
         "clientId": "your-client-id",
     },
+    root_path = "/api",
 )
 
 app.swagger_ui_init_oauth = {
@@ -121,12 +122,12 @@ app.add_middleware(
     allow_origin_regex=r"http://(127\.0\.0\.1|localhost)(:\d+)?",  # Regex para localhost con cualquier puerto
 )
 # Incluir routers
-app.include_router(auth_router_v1, prefix="/api")
-app.include_router(users_router_v1, prefix="/api")
-app.include_router(call_router_v1, prefix="/api")
-app.include_router(price_router_v1, prefix="/api")
-app.include_router(emailsend_router_v1, prefix="/api")
-app.include_router(dashboard_router_v1, prefix="/api")
+app.include_router(auth_router_v1)
+app.include_router(users_router_v1)
+app.include_router(call_router_v1)
+app.include_router(price_router_v1)
+app.include_router(emailsend_router_v1)
+app.include_router(dashboard_router_v1)
 
 
 @app.get("/")
@@ -189,7 +190,7 @@ logging.basicConfig(
 if __name__ == "__main__":
     try:
         subprocess.run(
-            ["fastapi", "dev", "main.py", "--port", str(settings.PORT), "--reload"]
+            ["fastapi", "dev", "main.py", "--port", str(settings.PORT)]
         )
     except KeyboardInterrupt:
         print("Server stopped.")
