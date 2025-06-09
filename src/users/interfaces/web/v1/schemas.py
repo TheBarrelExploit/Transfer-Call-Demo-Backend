@@ -32,7 +32,7 @@ class AuthProvider(str, Enum):
 
 class MFAConfigSchema(BaseModel):
     secret: Optional[str] = None
-    enabled: bool = False
+    enabled: bool = False 
     # backup_codes: List[str] = []
     # last_used_at: Optional[datetime] = None
 
@@ -62,6 +62,7 @@ class UserUpdateRequest(BaseModel):
     username:Optional[str] = None
     email:Optional[EmailStr] = None
     email_destination:Optional[EmailStr] = None
+    mfa:Optional[MFAConfigSchema] = None
 
 
 class UserChangePassword(BaseModel):
