@@ -69,7 +69,7 @@ class MicrosoftAuthService(AuthServiceSSO):
                 password_hash=None,
                 auth_provider=AuthProvider.MICROSOFT,
                 complete_profile=False,
-                logo=self.user_repository.image_to_b64(img = "src/shared/logo.png")
+                logo= await self.user_repository.image_to_b64(img = "src/shared/logo.png")
             )
             user = await self.user_repository.create_user_sso(new_user)
 
