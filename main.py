@@ -190,7 +190,7 @@ logging.basicConfig(
 if __name__ == "__main__":
     try:
         subprocess.run(
-            ["fastapi", "dev", "main.py", "--port", str(settings.PORT)]
+            ["fastapi", "run", "main.py", "--port", str(settings.PORT)]
         )
     except KeyboardInterrupt:
         print("Server stopped.")
