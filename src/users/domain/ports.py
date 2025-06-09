@@ -46,7 +46,3 @@ class UserRepository(ABC):
     @abstractmethod
     async def change_password(self, email:str, data:dict) -> bool:
         pass
-
-    @abstractmethod
-    async def image_to_b64(self,img:str) -> str:
-        pass
