@@ -32,6 +32,3 @@ class UserServiceUser(ABC):
     async def list_users(self, skip: int = 0, limit: int = 10) -> List[UserBase]:
         pass
     
-    @abstractmethod
-    async def image_to_b64(self, img:str)->str:
-        pass
