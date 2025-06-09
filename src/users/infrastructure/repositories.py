@@ -1,6 +1,5 @@
 from dataclasses import asdict
 from bson import ObjectId
-from base64 import b64encode
 from typing import Optional, List, Tuple
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -94,12 +93,6 @@ class DBUserRepository(UserRepository):
         )
         return result.modified_count > 0
     
-    async def image_to_b64(self, img:str)->str:
-        try:
-            with open(img,"rb") as image:
-                img_data = image.read()
-                img_b64 = b64encode(img_data).decode("utf-8")
-                return img_b64
-        except FileNotFoundError as e:
-            print(f"Error: no se encontro el archivo {e}")
-            return ""
+
+
+
