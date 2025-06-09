@@ -5,7 +5,6 @@
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from jose import jwt, JWTError
-from dataclasses import asdict
 from src.auth.application.services_sso import AuthServiceSSO
 from src.auth.infrastructure.microsoft_sso import MicrosoftSSORepository
 from src.users.application.services import UserService
