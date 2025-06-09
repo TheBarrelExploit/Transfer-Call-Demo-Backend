@@ -31,7 +31,7 @@ async def template_email(template_name: str, context: dict) -> str:
 class EmailService:
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
-        self.base_url = getattr(settings, 'FRONTEND_URL', 'http://127.0.0.1:5500/html')
+        self.base_url = getattr(settings, 'FRONTEND_URL', 'https://callaccounting.unifiedlab.tech/')
 
     async def send_token_email(
         self,
