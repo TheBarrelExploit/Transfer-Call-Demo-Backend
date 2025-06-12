@@ -56,7 +56,7 @@ class CallBase:
     erorr_code: str = None
     time_spent_in_call: str = "00:00:00"
     any_minutes: int = 0
-    total_to_pay: int = 0
+    total_to_pay: float = 0
     error_code:int = 0
 
     _id: Optional[ObjectId] = field(default=None, init=False, repr=False)
