@@ -61,7 +61,7 @@ class CallBaseResponse(BaseModel):
     kind_of_call: str
     class_call: str
     any_minutes: int = 0
-    total_to_pay: int = 0
+    total_to_pay: double = 0
 
 
 class CallResponse(BaseModel):
