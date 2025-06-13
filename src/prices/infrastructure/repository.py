@@ -121,13 +121,13 @@ class PriceRepository(PricesRepositoryDomain):
             {"_id": job_id, **price, "status": "pending"}
         )
 
-        bogota_tz = timezone('America/Bogota')
-        test_date = datetime.now(bogota_tz) + timedelta(minutes=1)
+        #bogota_tz = timezone('America/Bogota')
+        #test_date = datetime.now(bogota_tz) + timedelta(minutes=1)
 
         self.scheduler.scheduler.add_job(
             "src.shared.apscheduler.tarea_precios:execute_price_change",
             "date",
-            run_date=test_date,
+            run_date=price['update_date'],
             id=job_id,
             kwargs={"job_id": job_id} 
         )
